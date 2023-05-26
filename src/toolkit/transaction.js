@@ -164,27 +164,44 @@ export const createZKPair = async ({ tokenType = 'ERC721', params, chainId }) =>
     const provider = new ethers.providers.Web3Provider(window?.ethereum);
     const signer = provider.getSigner();
     const createPairContract = new ethers.Contract(LSSVMPairFactory?.[chainId], ABI, signer);
-    const createParams = {
-      nft: params?.[0],
-      bondingCurve: params?.[1],
-      assetRecipient: params?.[2],
-      poolType: params?.[3],
-      delta: params?.[4],
-      fee: params?.[5],
-      spotPrice: params?.[6],
-      initialNFTIDs: params?.[7],
-      // value: params?.[8]?.value || '0x00',
-    };
-    console.log('createParams', createParams);
-    const value = params?.[8]?.value.toString() || '0x00';
-    const createTx = await createPairContract.createPairETH(
-      { ...createParams },
-      { value: params?.[8]?.value },
-    );
-    // if (tokenType === 'ERC721') {
-    // } else {
-    //   createTx = await createPairContract.createPair1155ETH(...params);
-    // }
+    const create721Params = [
+      {
+        nft: params?.[0],
+        bondingCurve: params?.[1],
+        assetRecipient: params?.[2],
+        poolType: params?.[3],
+        delta: params?.[4],
+        fee: params?.[5],
+        spotPrice: params?.[6],
+        initialNFTIDs: params?.[7],
+      },
+      {
+        value: params?.[8]?.value,
+      },
+    ];
+    const create1155Params = [
+      {
+        nft: params?.[0],
+        bondingCurve: params?.[1],
+        assetRecipient: params?.[2],
+        poolType: params?.[3],
+        delta: params?.[4],
+        fee: params?.[5],
+        spotPrice: params?.[6],
+        nftId: params?.[7],
+        initialNFTCount: params?.[8],
+      },
+      {
+        value: params?.[9]?.value || '0x00',
+      },
+    ];
+
+    let createTx = null;
+    if (tokenType === 'ERC721') {
+      createTx = await createPairContract.createPairETH(...create721Params);
+    } else {
+      createTx = await createPairContract.createPair1155ETH(...create1155Params);
+    }
     const receipt = await createTx.wait();
     console.log('receipt', receipt);
   } catch (error) {
