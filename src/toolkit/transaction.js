@@ -1,7 +1,7 @@
 import { ethers, utils } from 'ethers';
 import mathLib from 'ezswap_math';
 import { toast } from 'react-toastify';
-import EZswap from '../ABI/EZswap.json';
+import ZKFactory from '../ABI/ZK/Factory.json';
 
 // 调用的路由合约
 const routerAddress = '0x183Eb45a05EA5456A6D329bb76eA6C6DABb375a6';
@@ -154,17 +154,57 @@ export const createPairABI1155 = ['function createPair1155ETH(address,address,ad
 
 const LSSVMPairFactory = {
   '0x5': '0xDe0293798084CC26D8f11784C9F09F7a967BEce5',
+  '0x0118': '0xBcB7032c1e1Ea0Abc3850590349560e1333d6848',
   '0x89': '0x7452c6e193298a2df001ea38b6369fbdc0a38123',
 };
 
+export const createZKPair = async ({ tokenType = 'ERC721', params, chainId }) => {
+  try {
+    const ABI = ZKFactory.abi;
+    const provider = new ethers.providers.Web3Provider(window?.ethereum);
+    const signer = provider.getSigner();
+    const createPairContract = new ethers.Contract(LSSVMPairFactory?.[chainId], ABI, signer);
+    const createParams = {
+      nft: params?.[0],
+      bondingCurve: params?.[1],
+      assetRecipient: params?.[2],
+      poolType: params?.[3],
+      delta: params?.[4],
+      fee: params?.[5],
+      spotPrice: params?.[6],
+      initialNFTIDs: params?.[7],
+      // value: params?.[8]?.value || '0x00',
+    };
+    console.log('createParams', createParams);
+    const value = params?.[8]?.value.toString() || '0x00';
+    const createTx = await createPairContract.createPairETH(
+      { ...createParams },
+      { value: params?.[8]?.value },
+    );
+    // if (tokenType === 'ERC721') {
+    // } else {
+    //   createTx = await createPairContract.createPair1155ETH(...params);
+    // }
+    const receipt = await createTx.wait();
+    console.log('receipt', receipt);
+  } catch (error) {
+    toast.error(error?.message);
+    console.log('error: ', error);
+    // console.log('error: ', error.error);
+  }
+};
+
 // 创建池子
-export const createPair = async ({ tokenType = 'ERC721', params }) => {
+export const createPair = async ({ tokenType = 'ERC721', params, chainId }) => {
+  if (chainId === '0x0118') {
+    createZKPair({ tokenType, params, chainId });
+    return;
+  }
   try {
     const ABI = tokenType === 'ERC721' ? createPairABI : createPairABI1155;
     const provider = new ethers.providers.Web3Provider(window?.ethereum);
     const signer = provider.getSigner();
-    // 用G网测试 0x5
-    const createPairContract = new ethers.Contract(LSSVMPairFactory?.['0x5'], ABI, signer);
+    const createPairContract = new ethers.Contract(LSSVMPairFactory?.[chainId], ABI, signer);
     let createTx;
     if (tokenType === 'ERC721') {
       createTx = await createPairContract.createPairETH(...params);

@@ -5,7 +5,9 @@ import {
   getDefaultWallets,
   RainbowKitProvider,
 } from '@rainbow-me/rainbowkit';
-import { mainnet, polygon, goerli } from 'wagmi/chains';
+import {
+  mainnet, polygon, goerli, zkSyncTestnet,
+} from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
 import {
   createBrowserRouter, RouterProvider, Route, Routes, createHashRouter,
@@ -18,8 +20,7 @@ import MathLib from './pages/MathLib';
 import CreatePool from './pages/CreatePool';
 
 const { chains, provider } = configureChains(
-  [goerli],
-  // [mainnet, polygon, goerli],
+  [goerli, zkSyncTestnet],
   [
     alchemyProvider({ apiKey: 'eeb2JnW2JdlOkqPH6NZVhVpRSXKaSW8D' }),
     publicProvider(),

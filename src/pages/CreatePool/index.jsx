@@ -6,7 +6,7 @@ import ReactJson from 'react-json-view';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
-import { useAccount } from 'wagmi';
+import { useAccount, useChainId } from 'wagmi';
 import mathLib from 'ezswap_math';
 import { toast } from 'react-toastify';
 import { ethers, utils } from 'ethers';
@@ -85,6 +85,10 @@ const curveAddressMap = {
     Exponential: '0x3dAFd2E40f94dDf289Aa209298c010A3775c8Cb0',
     Linear: '0xD38E321D0B450DF866B836612FBB5EECE3e4804e',
   },
+  '0x0118': {
+    Exponential: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
+    Linear: '0x4f639fE811181E9e11269fb66ffC9308de9A9Cd5',
+  },
 };
 
 const poolTypeMap = {
@@ -98,6 +102,7 @@ function CreatePool() {
   const [priceJson, setPriceJson] = useState(myJsonObject);
   const [deposit, setDeposit] = useState(0);
   const [receive, setReceive] = useState(0);
+  const chainId = useChainId();
   const formik = useFormik({
     initialValues,
     onSubmit: (values) => {
@@ -113,10 +118,12 @@ function CreatePool() {
         toast.error('spotPrice empty');
         return;
       }
+      const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
+
       let total = '0';
       const params = [
         values?.collectionAddress, // NFT地址
-        curveAddressMap['0x5']?.[values?.model], // 价格模型地址
+        curveAddressMap[chainIdHex]?.[values?.model], // 价格模型地址
         values.poolType === 'trade' ? '0x0000000000000000000000000000000000000000' : address, // assetRecipient
         poolTypeMap?.[values.poolType], // buy: 0, sell: 1, trade: 2,
         utils.parseEther(values?.delta?.toString()), // delta
@@ -136,12 +143,14 @@ function CreatePool() {
         params[8] = values?.poolType === 'buy' ? 0 : values?.sellNftCount; // 卖的个数
       }
       params.push({ value: utils.parseEther(total) });
-      createPair({ tokenType: values?.tokenType, params });
+
+      createPair({ tokenType: values?.tokenType, params, chainId: chainIdHex });
     },
   });
 
   useEffect(() => {
     const priceData = getPriceData(formik?.values);
+    console.log('chainId', ethers.BigNumber.from(chainId).toHexString());
     setPriceJson(priceData);
     const { poolType = 'buy' } = formik.values || {};
     if (poolType === 'buy') {
