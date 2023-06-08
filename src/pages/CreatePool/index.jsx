@@ -236,7 +236,7 @@ function CreatePool() {
                 value={formik.values.spotPrice}
                 onChange={formik.handleChange}
                 name="spotPrice"
-                label="spotPrice"
+                label="startPrice"
                 variant="outlined"
                 sx={{ my: 2, mx: 2 }}
               />
