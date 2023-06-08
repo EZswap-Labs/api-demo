@@ -153,7 +153,7 @@ export const createPairABI = ['function createPairETH(address,address,address,ui
 export const createPairABI1155 = ['function createPair1155ETH(address,address,address,uint8,uint128,uint96,uint128,uint256,uint256) external payable returns(address)'];
 
 const LSSVMPairFactory = {
-  '0x5': '0xDe0293798084CC26D8f11784C9F09F7a967BEce5',
+  '0x05': '0xDe0293798084CC26D8f11784C9F09F7a967BEce5',
   '0x0118': '0xBcB7032c1e1Ea0Abc3850590349560e1333d6848',
   '0x89': '0x7452c6e193298a2df001ea38b6369fbdc0a38123',
 };

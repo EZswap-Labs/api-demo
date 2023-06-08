@@ -29,7 +29,7 @@ const initialValues = {
   spotPrice: 1,
   delta: 0.1,
   fee: 0,
-  protocolFee: 0,
+  protocolFee: 0.001,
   projectFee: 0,
   buyNftCount: 1,
   sellNftCount: 1,
@@ -81,13 +81,23 @@ const getPriceData = ({
 };
 
 const curveAddressMap = {
-  '0x5': {
+  '0x05': {
     Exponential: '0x3dAFd2E40f94dDf289Aa209298c010A3775c8Cb0',
     Linear: '0xD38E321D0B450DF866B836612FBB5EECE3e4804e',
   },
   '0x0118': {
     Exponential: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
     Linear: '0x4f639fE811181E9e11269fb66ffC9308de9A9Cd5',
+  },
+};
+const CollectionAddress = {
+  '0x05': {
+    ERC721: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
+    ERC1155: '0x4f639fE811181E9e11269fb66ffC9308de9A9Cd5',
+  },
+  '0x0118': {
+    ERC721: '0x2Fc83539F6299d3d7e88585EcBCbbC041db6fdDC',
+    ERC1155: '0xe76E5d203f453EEE315e954CdB98a7caae67691a',
   },
 };
 
@@ -150,7 +160,6 @@ function CreatePool() {
 
   useEffect(() => {
     const priceData = getPriceData(formik?.values);
-    console.log('chainId', ethers.BigNumber.from(chainId).toHexString());
     setPriceJson(priceData);
     const { poolType = 'buy' } = formik.values || {};
     if (poolType === 'buy') {
@@ -163,11 +172,15 @@ function CreatePool() {
     }
     if (poolType === 'trade') {
       setReceive((priceData?.sellPriceData?.priceData?.poolSellPrice || 0)
-      + (priceData?.sellPriceData?.priceData?.poolSellPriceFee || 0));
+        + (priceData?.sellPriceData?.priceData?.poolSellPriceFee || 0));
       setDeposit((priceData?.buyPriceData?.priceData?.poolBuyPrice || 0)
         + (priceData?.buyPriceData?.priceData?.poolBuyPriceFee || 0));
     }
   }, [formik?.values]);
+  useEffect(() => {
+    console.log('chainId', ethers.BigNumber.from(chainId).toHexString());
+    formik.setFieldValue('collectionAddress', CollectionAddress[ethers.BigNumber.from(chainId).toHexString()][formik.values.tokenType]);
+  }, [chainId, formik.values.tokenType]);
 
   return (
     <Box sx={{ my: 2 }}>
@@ -368,19 +381,9 @@ function CreatePool() {
               )
               : null
           }
-          {
-            formik?.values?.tokenType === 'ERC1155'
-              ? (
-                <Typography sx={{ my: 2, mx: 2 }}>
-                  1155 NFT contract : 0xad2f2ae5e421f9f9764513278e7f6e00d3668c95
-                </Typography>
-              )
-              : (
-                <Typography sx={{ my: 2, mx: 2 }}>
-                  721 NFT contract : 0x8e81970ceb63c236534a763c0ecb611d2d16189f
-                </Typography>
-              )
-          }
+          <Typography sx={{ my: 2, mx: 2 }}>
+            NFT contract :{CollectionAddress[ethers.BigNumber.from(chainId).toHexString()][formik.values.tokenType]}
+          </Typography>
         </Grid>
       </Grid>
     </Box>
