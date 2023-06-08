@@ -382,7 +382,12 @@ function CreatePool() {
               : null
           }
           <Typography sx={{ my: 2, mx: 2 }}>
-            NFT contract :{CollectionAddress[ethers.BigNumber.from(chainId).toHexString()][formik.values.tokenType]}
+            NFT contract :
+            {
+              CollectionAddress
+                ?.[ethers.BigNumber.from(chainId).toHexString()]
+                ?.[formik.values.tokenType]
+            }
           </Typography>
         </Grid>
       </Grid>
