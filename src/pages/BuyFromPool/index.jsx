@@ -2,6 +2,7 @@ import {
   Button, Box, FormControl, InputLabel, Input, FormHelperText, Stack, Grid,
 } from '@mui/material';
 import { useState, useEffect } from 'react';
+import { useChainId } from 'wagmi';
 import { queryPoolListByPage } from '../../service/pool';
 import NftTable from '../../components/NftTable';
 import Header from '../../components/Header';
@@ -11,13 +12,12 @@ function BuyFromPool() {
   const [contractAddress, setContractAddress] = useState('0x331b7a63ff1bba0736c2164e03b1c43167200708');
   // 0x70a3fd679762eafd655d293cb8b4a76c11a4da4a
   const [poolList, setPoolList] = useState([]);
-  const getPoolList = async () => {
+  const chainId = useChainId();
+  const getPoolList = async (network) => {
     try {
       const res = await queryPoolListByPage({
         contractAddress,
-        // network: 'eth',
-        // network: 'goerli',
-        network: 'polygon',
+        network,
       });
       const tempList = res?.data?.data?.filter((i) => i.fromPlatform === 1 && i.type !== 'buy');
       // tempList = tempList?.filter((p) => (p.nftCount > 0));
@@ -29,8 +29,12 @@ function BuyFromPool() {
   };
 
   useEffect(() => {
-    getPoolList();
-  }, []);
+    if (chainId === 280) {
+      getPoolList('zks_dev');
+    } else if (chainId === 5) {
+      getPoolList('dev');
+    }
+  }, [chainId]);
 
   return (
     <Box sx={{ my: 2 }}>
