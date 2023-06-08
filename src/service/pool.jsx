@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export function queryPoolListByPage(parameter) {
   return axios({
-    url: 'https://test.ezswap.io/api/api/queryCollectionPoolList',
+    url: 'https://testapi.ezswap.io/api/queryCollectionPoolList',
     method: 'post',
     data: parameter,
   });
