@@ -12,7 +12,11 @@ function BuyFromPool() {
   const [poolList, setPoolList] = useState([]);
   const chainId = useChainId();
 
-  const getPoolList = async (network) => {
+  const getPoolList = async () => {
+    let network = 'dev';
+    if (chainId === 280) {
+      network = 'zks_dev';
+    }
     try {
       const res = await queryPoolListByPage({
         contractAddress,
@@ -27,11 +31,7 @@ function BuyFromPool() {
   };
 
   useEffect(() => {
-    if (chainId === 280) {
-      getPoolList('zks_dev');
-    } else if (chainId === 5) {
-      getPoolList('dev');
-    }
+    getPoolList();
   }, [chainId]);
 
   return (

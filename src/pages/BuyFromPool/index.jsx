@@ -13,14 +13,17 @@ function BuyFromPool() {
   // 0x70a3fd679762eafd655d293cb8b4a76c11a4da4a
   const [poolList, setPoolList] = useState([]);
   const chainId = useChainId();
-  const getPoolList = async (network) => {
+  const getPoolList = async () => {
+    let network = 'dev';
+    if (chainId === 280) {
+      network = 'zks_dev';
+    }
     try {
       const res = await queryPoolListByPage({
         contractAddress,
         network,
       });
       const tempList = res?.data?.data?.filter((i) => i.fromPlatform === 1 && i.type !== 'buy');
-      // tempList = tempList?.filter((p) => (p.nftCount > 0));
       setPoolList(tempList);
     } catch (error) {
       console.log('error', error);
@@ -29,11 +32,7 @@ function BuyFromPool() {
   };
 
   useEffect(() => {
-    if (chainId === 280) {
-      getPoolList('zks_dev');
-    } else if (chainId === 5) {
-      getPoolList('dev');
-    }
+    getPoolList();
   }, [chainId]);
 
   return (
