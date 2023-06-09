@@ -225,22 +225,21 @@ export default function NftTable({
             onClick={() => {
               approve();
             }}
-            sx={{ mx: 2 }}
+            sx={{ m: 2 }}
           >
             Approve
           </Button>
-          <Button
-            variant="contained"
-            onClick={() => {
-              buyNFT(actionType);
-            }}
-            sx={{ my: 2 }}
-          >
-            {actionType}
-          </Button>
         </Box>
       ) : null}
-
+      <Button
+        variant="contained"
+        onClick={() => {
+          buyNFT(actionType);
+        }}
+        sx={{ my: 2 }}
+      >
+        {actionType}
+      </Button>
     </Box>
   );
 }
