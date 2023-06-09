@@ -153,6 +153,9 @@ export default function NftTable({ poolList = [], actionType = 'Buy' }) {
 
       <Typography variant="h5" sx={{ my: 2 }}>Original Pool Data</Typography>
       <DataGrid
+        sx={{
+          minHeight: '400px',
+        }}
         rows={poolList}
         columns={columns}
         pageSize={5}
@@ -194,6 +197,7 @@ export default function NftTable({ poolList = [], actionType = 'Buy' }) {
         onClick={() => {
           buyNFT(actionType);
         }}
+        sx={{ my: 2 }}
       >
         {actionType}
       </Button>
