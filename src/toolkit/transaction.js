@@ -9,6 +9,12 @@ const routerAddress = {
   '0x0118': '0xC72564dCEe45a8DEf91dA25F875719c2f1Fa8fad',
 };
 
+const LSSVMPairFactory = {
+  '0x05': '0xDe0293798084CC26D8f11784C9F09F7a967BEce5',
+  '0x0118': '0xBcB7032c1e1Ea0Abc3850590349560e1333d6848',
+  '0x89': '0x7452c6e193298a2df001ea38b6369fbdc0a38123',
+};
+
 export const setApproval = async ({ nftContractAddress, chainId }) => {
   const approvedForAllAbi = [
     'function isApprovedForAll(address owner, address operator) public view returns (bool)',
@@ -17,7 +23,7 @@ export const setApproval = async ({ nftContractAddress, chainId }) => {
   const provider = new ethers.providers.Web3Provider(window?.ethereum);
   const signer = provider.getSigner();
   const nftContract = new ethers.Contract(nftContractAddress, approvedForAllAbi, signer);
-  const transition = await nftContract.setApprovalForAll(routerAddress?.[chainId], true);
+  const transition = await nftContract.setApprovalForAll(LSSVMPairFactory?.[chainId], true);
   const res = await transition.wait();
   console.log('res', res);
   toast.success('success');
@@ -171,12 +177,6 @@ export const createPairABI = ['function createPairETH(address,address,address,ui
 
 export const createPairABI1155 = ['function createPair1155ETH(address,address,address,uint8,uint128,uint96,uint128,uint256,uint256) external payable returns(address)'];
 
-const LSSVMPairFactory = {
-  '0x05': '0xDe0293798084CC26D8f11784C9F09F7a967BEce5',
-  '0x0118': '0xBcB7032c1e1Ea0Abc3850590349560e1333d6848',
-  '0x89': '0x7452c6e193298a2df001ea38b6369fbdc0a38123',
-};
-
 export const createZKPair = async ({ tokenType = 'ERC721', params, chainId }) => {
   try {
     const ABI = ZKFactory.abi;
@@ -192,12 +192,14 @@ export const createZKPair = async ({ tokenType = 'ERC721', params, chainId }) =>
         delta: params?.[4],
         fee: params?.[5],
         spotPrice: params?.[6],
+        // initialNFTIDs: [],
         initialNFTIDs: params?.[7],
       },
       {
         value: params?.[8]?.value,
       },
     ];
+    console.log('create721Params', create721Params);
     const create1155Params = [
       {
         nft: params?.[0],
@@ -217,6 +219,7 @@ export const createZKPair = async ({ tokenType = 'ERC721', params, chainId }) =>
 
     let createTx = null;
     if (tokenType === 'ERC721') {
+      // createTx = await createPairContract.createPairETH([...params]);
       createTx = await createPairContract.createPairETH(...create721Params);
     } else {
       createTx = await createPairContract.createPair1155ETH(...create1155Params);

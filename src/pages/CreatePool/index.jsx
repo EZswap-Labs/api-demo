@@ -11,7 +11,7 @@ import mathLib from 'ezswap_math';
 import { toast } from 'react-toastify';
 import { ethers, utils } from 'ethers';
 import Header from '../../components/Header';
-import { createPair } from '../../toolkit/transaction';
+import { createPair, setApproval } from '../../toolkit/transaction';
 
 const myJsonObject = {
   priceData: {
@@ -143,6 +143,9 @@ function CreatePool() {
       ];
       if (values?.poolType === 'buy') {
         total = deposit.toString();
+      }
+      if (values?.poolType === 'sell') {
+        params[7] = [parseInt(values?.nftIds, 10)]; // tokenId
       }
       if (values?.tokenType === 'ERC1155') {
         if (!(values?.tokenId) && values?.tokenId !== 0) {
@@ -363,6 +366,21 @@ function CreatePool() {
           >
             Create Pool
           </Button>
+          {formik?.values?.poolType === 'sell' ? (
+            <Button
+              variant="contained"
+              sx={{ m: 2 }}
+              onClick={() => {
+                const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
+                setApproval({
+                  nftContractAddress: formik.values.collectionAddress,
+                  chainId: chainIdHex,
+                });
+              }}
+            >
+              approve
+            </Button>
+          ) : null}
           {
             formik?.values?.poolType !== 'buy'
               ? (
