@@ -8,7 +8,7 @@ import NftTable from '../../components/NftTable';
 import Header from '../../components/Header';
 
 function BuyFromPool() {
-  const [contractAddress, setContractAddress] = useState('0x331b7a63ff1bba0736c2164e03b1c43167200708');
+  const [contractAddress, setContractAddress] = useState('0x2Fc83539F6299d3d7e88585EcBCbbC041db6fdDC');
   const [poolList, setPoolList] = useState([]);
   const chainId = useChainId();
 
@@ -73,7 +73,7 @@ function BuyFromPool() {
           </Stack>
         </Grid>
         <Grid item md={12} sx={{ m: 4 }}>
-          <NftTable poolList={poolList} actionType="Sell" />
+          <NftTable poolList={poolList} actionType="Sell" nftContractAddress={contractAddress} />
         </Grid>
       </Grid>
 

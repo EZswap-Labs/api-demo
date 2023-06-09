@@ -4,12 +4,14 @@ import {
   Typography, Box, TextField, Button,
 } from '@mui/material';
 import mathLib from 'ezswap_math';
-import { utils, BigNumber, getDefaultProvider } from 'ethers';
+import {
+  utils, BigNumber, getDefaultProvider, ethers,
+} from 'ethers';
 import { toast } from 'react-toastify';
 import {
-  useAccount, useConnect, useDisconnect, useClient,
+  useAccount, useConnect, useDisconnect, useClient, useChainId,
 } from 'wagmi';
-import { buyMultipleNFT, sellMultipleNFT } from '../toolkit/transaction';
+import { buyMultipleNFT, sellMultipleNFT, setApproval } from '../toolkit/transaction';
 
 const NFTcolumns = [
   { field: 'id', headerName: 'ID', width: 100 },
@@ -69,13 +71,16 @@ const calculatedColumns = [
   { field: 'nextPrice', headerName: 'nextPrice', width: 200 },
 ];
 
-export default function NftTable({ poolList = [], actionType = 'Buy' }) {
+export default function NftTable({
+  poolList = [], actionType = 'Buy', nftContractAddress,
+}) {
   const { address, isConnected } = useAccount();
   // const client = useClient();
+  const chainId = useChainId();
 
   // const [calculatedlist, setCalculatedlist] = React.useState([]);
   const [selectedKeys, setSelectedKeys] = React.useState([]);
-  // const [index, setIndex] = React.useState(0);
+  const [tokenId, setTokenId] = React.useState('');
 
   /* React.useEffect(() => {
     const tempList = poolList
@@ -110,6 +115,14 @@ export default function NftTable({ poolList = [], actionType = 'Buy' }) {
     setCalculatedlist(tempList);
   }, [poolList, index]); */
 
+  const approve = () => {
+    const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
+    setApproval({
+      nftContractAddress,
+      chainId: chainIdHex,
+    });
+  };
+
   const buyNFT = (ActionType) => {
     if (!address) {
       toast.warn('Please connect the wallet!');
@@ -118,11 +131,13 @@ export default function NftTable({ poolList = [], actionType = 'Buy' }) {
       toast.warn('Please connect the wallet!');
     }
     const selectedList = selectedKeys?.map((key) => poolList.find((c) => c.id === key));
+    const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
     if (ActionType === 'buy') {
       // 从池子里购买NFT,
       buyMultipleNFT({
         address,
         selectedList,
+        chainId: chainIdHex,
       });
     } else {
       // 将自己的NFT卖给池子
@@ -130,6 +145,8 @@ export default function NftTable({ poolList = [], actionType = 'Buy' }) {
       sellMultipleNFT({
         address,
         selectedList,
+        chainId: chainIdHex,
+        tokenId,
       });
     }
   };
@@ -192,15 +209,38 @@ export default function NftTable({ poolList = [], actionType = 'Buy' }) {
           setSelectedKeys(keys);
         }}
       /> */}
-      <Button
-        variant="contained"
-        onClick={() => {
-          buyNFT(actionType);
-        }}
-        sx={{ my: 2 }}
-      >
-        {actionType}
-      </Button>
+      {actionType === 'Sell' ? (
+        <Box>
+          <TextField
+            label="tokenId"
+            variant="outlined"
+            value={tokenId}
+            sx={{ mt: 2, mr: 2, width: '200px' }}
+            onChange={(e) => {
+              setTokenId(e?.target?.value);
+            }}
+          />
+          <Button
+            variant="contained"
+            onClick={() => {
+              approve();
+            }}
+            sx={{ mx: 2 }}
+          >
+            Approve
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              buyNFT(actionType);
+            }}
+            sx={{ my: 2 }}
+          >
+            {actionType}
+          </Button>
+        </Box>
+      ) : null}
+
     </Box>
   );
 }

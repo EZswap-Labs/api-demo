@@ -4,7 +4,24 @@ import { toast } from 'react-toastify';
 import ZKFactory from '../ABI/ZK/Factory.json';
 
 // 调用的路由合约
-const routerAddress = '0x183Eb45a05EA5456A6D329bb76eA6C6DABb375a6';
+const routerAddress = {
+  '0x05': '0x183Eb45a05EA5456A6D329bb76eA6C6DABb375a6',
+  '0x0118': '0xC72564dCEe45a8DEf91dA25F875719c2f1Fa8fad',
+};
+
+export const setApproval = async ({ nftContractAddress, chainId }) => {
+  const approvedForAllAbi = [
+    'function isApprovedForAll(address owner, address operator) public view returns (bool)',
+    'function setApprovalForAll(address,bool) public',
+  ];
+  const provider = new ethers.providers.Web3Provider(window?.ethereum);
+  const signer = provider.getSigner();
+  const nftContract = new ethers.Contract(nftContractAddress, approvedForAllAbi, signer);
+  const transition = await nftContract.setApprovalForAll(routerAddress?.[chainId], true);
+  const res = await transition.wait();
+  console.log('res', res);
+  toast.success('success');
+};
 
 // const formatCeilNumber = (value) => (Math.ceil(value * 10000) / 10000);
 
@@ -35,13 +52,13 @@ const routerAddress = '0x183Eb45a05EA5456A6D329bb76eA6C6DABb375a6';
  * @returns {Promise<void>}
  */
 export const buyMultipleNFT = async ({
-  address, selectedList,
+  address, selectedList, chainId,
 }) => {
   // init provider
   const buyAbi = ['function robustSwapETHForSpecificNFTs(tuple(tuple(address,uint256[],uint256[]),uint256)[],address,address,uint256) public payable returns (uint256)'];
   const provider = new ethers.providers.Web3Provider(window?.ethereum);
   const signer = provider.getSigner();
-  const contract = new ethers.Contract(routerAddress, buyAbi, signer);
+  const contract = new ethers.Contract(routerAddress?.[chainId], buyAbi, signer);
   // init provider
   const NFTData = [];
   // todo 721:选择nft的数量, 1155: 该nft tokenId想要买的数量
@@ -97,13 +114,13 @@ export const buyMultipleNFT = async ({
  * @returns {Promise<void>}
  */
 export const sellMultipleNFT = async ({
-  address, selectedList,
+  address, selectedList, chainId, tokenId,
 }) => {
   // init provider
   const buyTicketAbi = ['function robustSwapNFTsForToken(tuple(tuple(address,uint256[],uint256[]),uint256)[],address,uint256) public returns (uint256)'];
   const provider = new ethers.providers.Web3Provider(window?.ethereum);
   const signer = provider.getSigner();
-  const ticketContract = new ethers.Contract(routerAddress, buyTicketAbi, signer);
+  const ticketContract = new ethers.Contract(routerAddress?.[chainId], buyTicketAbi, signer);
   // init provider
   let totalValue = 0;
   const NFTData = [];
@@ -131,9 +148,11 @@ export const sellMultipleNFT = async ({
     totalValue += Number(total);
     // todo 想要出售的NFT,1155一个池子只允许有一个tokenId,所以直接取字段,
     //  721因为一个池子可能有多个tokenId,需要根据用户的选择设置值,demo默认选择了第一个
-    const chooseTokenId = [item.is1155 ? Number(item.nftId1155) : Number(item.nftIds.split(',')[0])];
     // 构造合约参数需要的数据结构
-    NFTData.push([[item.id, chooseTokenId, [sellCount]], total]);
+    NFTData.push([[item.id, [tokenId], [sellCount]], total]);
+    // const chooseTokenId = [item.is1155 ? Number(item.nftId1155) :
+    //  Number(item?.nftIds?.split(',')[0])];
+    // NFTData.push([[item.id, chooseTokenId, [sellCount]], total]);
   });
   // 上链
   const approveTx = await ticketContract.robustSwapNFTsForToken(
