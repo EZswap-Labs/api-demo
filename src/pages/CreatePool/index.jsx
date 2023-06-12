@@ -143,8 +143,7 @@ function CreatePool() {
       ];
       if (values?.poolType === 'buy') {
         total = deposit.toString();
-      }
-      if (values?.poolType === 'sell') {
+      } else {
         params[7] = [parseInt(values?.nftIds, 10)]; // tokenId
       }
       if (values?.tokenType === 'ERC1155') {
@@ -366,7 +365,7 @@ function CreatePool() {
           >
             Create Pool
           </Button>
-          {formik?.values?.poolType === 'sell' ? (
+          {formik?.values?.poolType !== 'buy' ? (
             <Button
               variant="contained"
               sx={{ m: 2 }}

@@ -209,7 +209,7 @@ export default function NftTable({
           setSelectedKeys(keys);
         }}
       /> */}
-      {actionType === 'Sell' ? (
+      {actionType !== 'buy' ? (
         <Box>
           <TextField
             label="tokenId"
