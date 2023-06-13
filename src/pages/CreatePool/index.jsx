@@ -26,6 +26,7 @@ const myJsonObject = {
   nextPrice: { userSellPrice: 0.8945999999999998 },
 };
 const initialValues = {
+  startPrice: 1,
   spotPrice: 1,
   delta: 0.1,
   fee: 0,
@@ -42,7 +43,7 @@ const initialValues = {
 };
 
 const getPriceData = ({
-  spotPrice, delta, fee, protocolFee, projectFee,
+  spotPrice, delta, fee, protocolFee, projectFee, startPrice,
   buyNftCount, sellNftCount, model, action, poolType,
 }) => {
   try {
@@ -50,7 +51,7 @@ const getPriceData = ({
     let sellPriceData;
     if (poolType === 'buy' || poolType === 'trade') {
       buyPriceData = mathLib?.[model]?.[poolType](
-        spotPrice,
+        startPrice,
         delta,
         fee,
         protocolFee,
@@ -61,7 +62,7 @@ const getPriceData = ({
     }
     if (poolType === 'sell' || poolType === 'trade') {
       sellPriceData = mathLib?.[model]?.[poolType](
-        spotPrice,
+        startPrice,
         delta,
         fee,
         protocolFee,
@@ -124,8 +125,8 @@ function CreatePool() {
         toast.error('collectionAddress empty');
         return;
       }
-      if (!values?.spotPrice) {
-        toast.error('spotPrice empty');
+      if (!values?.startPrice) {
+        toast.error('startPrice empty');
         return;
       }
       const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
@@ -179,6 +180,21 @@ function CreatePool() {
         + (priceData?.buyPriceData?.priceData?.poolBuyPriceFee || 0));
     }
   }, [formik?.values]);
+
+  useEffect(() => {
+    const { poolType = 'buy' } = formik.values || {};
+    const priceData = getPriceData(formik?.values);
+    if (poolType === 'buy') {
+      formik.setFieldValue('spotPrice', priceData?.buyPriceData?.priceData?.spotPrice);
+    }
+    if (poolType === 'sell') {
+      formik.setFieldValue('spotPrice', priceData?.sellPriceData?.priceData?.spotPrice);
+    }
+    if (poolType === 'trade') {
+      formik.setFieldValue('spotPrice', priceData?.sellPriceData?.priceData?.spotPrice || priceData?.buyPriceData?.priceData?.spotPrice);
+    }
+  }, [priceJson]);
+
   useEffect(() => {
     console.log('chainId', ethers.BigNumber.from(chainId).toHexString());
     formik.setFieldValue('collectionAddress', CollectionAddress[ethers.BigNumber.from(chainId).toHexString()][formik.values.tokenType]);
@@ -235,10 +251,19 @@ function CreatePool() {
             <Stack flexDirection="row">
               <TextField
                 type="number"
-                value={formik.values.spotPrice}
+                value={formik.values.startPrice}
                 onChange={formik.handleChange}
-                name="spotPrice"
+                name="startPrice"
                 label="startPrice"
+                variant="outlined"
+                sx={{ my: 2, mx: 2 }}
+              />
+              <TextField
+                type="number"
+                disabled
+                value={formik.values.spotPrice}
+                name="spotPrice"
+                label="spotPrice"
                 variant="outlined"
                 sx={{ my: 2, mx: 2 }}
               />
