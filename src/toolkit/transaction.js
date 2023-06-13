@@ -76,9 +76,13 @@ export const buyMultipleNFT = async ({
       // todo 项目方协议费,自定义设置 例:0.5%计算时换算成0.005
       const projectFee = 0.005;
       // 计算购买NFT需要的金额
+      let { delta } = item;
+      if (item.type === 'trade') {
+        delta += 1;
+      }
       const nftPrice = mathLib[item.bondingCurve]?.[item.type](
         Number(utils.formatEther(item.spotPrice)),
-        Number(utils.formatEther(item.delta)),
+        Number(utils.formatEther(delta)),
         Number(utils.formatEther(item.fee)),
         Number(utils.formatEther(item.protocolFee)),
         projectFee,
@@ -144,9 +148,13 @@ export const sellMultipleNFT = async ({
     // todo 项目方协议费,自定义设置 例:0.5%计算时换算成0.005
     const projectFee = 0.005;
     // 计算购买NFT需要的金额
+    let { delta } = item;
+    if (item.type === 'trade') {
+      delta += 1;
+    }
     const priceItem = mathLib[item.bondingCurve]?.[item.type](
       Number(utils.formatEther(item.spotPrice)),
-      Number(utils.formatEther(item.delta)),
+      Number(utils.formatEther(delta)),
       Number(utils.formatEther(item.fee)),
       Number(utils.formatEther(item.protocolFee)),
       projectFee,

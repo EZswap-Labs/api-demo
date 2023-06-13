@@ -49,9 +49,13 @@ const getPriceData = ({
       action,
     );
     console.log(mathLib.Exponential.trade(0.0433, 1.056, 0.034, 0.005, 0, 3, 'read'));
+    let deltaTemp = delta;
+    if (deltaTemp === 'trade') {
+      deltaTemp += 1;
+    }
     const priceData = mathLib?.[model]?.[poolType](
       spotPrice,
-      delta,
+      deltaTemp,
       fee,
       protocolFee,
       projectFee,

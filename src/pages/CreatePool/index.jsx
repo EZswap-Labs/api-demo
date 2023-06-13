@@ -49,6 +49,10 @@ const getPriceData = ({
   try {
     let buyPriceData;
     let sellPriceData;
+    let deltaTemp = delta;
+    if (deltaTemp === 'trade') {
+      deltaTemp += 1;
+    }
     if (poolType === 'buy' || poolType === 'trade') {
       buyPriceData = mathLib?.[model]?.[poolType](
         startPrice,
