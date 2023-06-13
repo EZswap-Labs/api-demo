@@ -132,7 +132,7 @@ export default function NftTable({
     }
     const selectedList = selectedKeys?.map((key) => poolList.find((c) => c.id === key));
     const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
-    if (ActionType === 'buy') {
+    if (ActionType === 'Buy') {
       // 从池子里购买NFT,
       buyMultipleNFT({
         address,
@@ -209,7 +209,7 @@ export default function NftTable({
           setSelectedKeys(keys);
         }}
       /> */}
-      {actionType !== 'buy' ? (
+      {actionType !== 'Buy' ? (
         <Box>
           <TextField
             label="tokenId"

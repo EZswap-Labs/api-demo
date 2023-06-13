@@ -60,57 +60,64 @@ export const setApproval = async ({ nftContractAddress, chainId }) => {
 export const buyMultipleNFT = async ({
   address, selectedList, chainId,
 }) => {
-  // init provider
-  const buyAbi = ['function robustSwapETHForSpecificNFTs(tuple(tuple(address,uint256[],uint256[]),uint256)[],address,address,uint256) public payable returns (uint256)'];
-  const provider = new ethers.providers.Web3Provider(window?.ethereum);
-  const signer = provider.getSigner();
-  const contract = new ethers.Contract(routerAddress?.[chainId], buyAbi, signer);
-  // init provider
-  const NFTData = [];
-  // todo 721:选择nft的数量, 1155: 该nft tokenId想要买的数量
-  const buyCount = 1;
-  let totalValue = 0;
-  // 循环选中的每个池子,整理成合约需要的参数.totalValue:购买所有NFT的总价
-  selectedList.forEach((item) => {
-    // todo 项目方协议费,自定义设置 例:0.5%计算时换算成0.005
-    const projectFee = 0.005;
-    // 计算购买NFT需要的金额
-    const nftPrice = mathLib[item.bondingCurve]?.[item.type](
-      Number(utils.formatEther(item.spotPrice)),
-      Number(utils.formatEther(item.delta)),
-      Number(utils.formatEther(item.fee)),
-      Number(utils.formatEther(item.protocolFee)),
-      projectFee,
-      buyCount,
+  try {
+    // init provider
+    const buyAbi = ['function robustSwapETHForSpecificNFTs(tuple(tuple(address,uint256[],uint256[]),uint256)[],address,address,uint256) public payable returns (uint256)'];
+    const provider = new ethers.providers.Web3Provider(window?.ethereum);
+    const signer = provider.getSigner();
+    const contract = new ethers.Contract(routerAddress?.[chainId], buyAbi, signer);
+    // init provider
+    const NFTData = [];
+    // todo 721:选择nft的数量, 1155: 该nft tokenId想要买的数量
+    const buyCount = 1;
+    let totalValue = 0;
+    // 循环选中的每个池子,整理成合约需要的参数.totalValue:购买所有NFT的总价
+    selectedList.forEach((item) => {
+      // todo 项目方协议费,自定义设置 例:0.5%计算时换算成0.005
+      const projectFee = 0.005;
+      // 计算购买NFT需要的金额
+      const nftPrice = mathLib[item.bondingCurve]?.[item.type](
+        Number(utils.formatEther(item.spotPrice)),
+        Number(utils.formatEther(item.delta)),
+        Number(utils.formatEther(item.fee)),
+        Number(utils.formatEther(item.protocolFee)),
+        projectFee,
+        buyCount,
+        'read',
+      );
+      // const formatMoney = formatCeilNumber();
+      // 计算的结果单位是E,需要转成wei传给合约
+      // 1.005是默认滑点,
+      // 原因: 买NFT有保险机制,超过total就取消购买,防止夹子.
+      // 计算库精度较高,计算参数可能因为四舍五入导致误差,所以设置默认滑点消除误差
+      const total = utils.parseEther((nftPrice.priceData.userBuyPrice * 1.005)
+        .toFixed(5)
+        .toString());
+      totalValue += Number(total);
+      // todo 想要购买的NFT,1155一个池子只允许有一个tokenId,所以直接取字段,
+      //  721因为一个池子可能有多个tokenId,需要根据用户的选择设置值,demo默认选择了第一个
+      const chooseTokenId = [item.is1155 ? Number(item.nftId1155) : Number(item.nftIds?.[0])];
+      // 构造合约参数需要的数据结构
+      NFTData.push([[item.id, chooseTokenId, [buyCount]], total]);
+    });
+    // 上链
+    const buyTx = await contract.robustSwapETHForSpecificNFTs(
+      NFTData,
+      // 未用完的金额回退地址
+      address,
+      // nft接收地址
+      address,
+      // 超过这个时间,则取消购买
+      Date.parse(new Date()) / 1000 + 60 * 3600,
+      // 支付的总金额
+      { value: totalValue.toString() },
     );
-    // const formatMoney = formatCeilNumber();
-    // 计算的结果单位是E,需要转成wei传给合约
-    // 1.005是默认滑点,
-    // 原因: 买NFT有保险机制,超过total就取消购买,防止夹子.
-    // 计算库精度较高,计算参数可能因为四舍五入导致误差,所以设置默认滑点消除误差
-    const total = utils.parseEther((nftPrice.priceData.userBuyPrice * 1.005).toString());
-    totalValue += Number(total);
-    // todo 想要购买的NFT,1155一个池子只允许有一个tokenId,所以直接取字段,
-    //  721因为一个池子可能有多个tokenId,需要根据用户的选择设置值,demo默认选择了第一个
-    const chooseTokenId = [item.is1155 ? Number(item.nftId1155) : Number(item.nftIds.split(',')[0])];
-    // 构造合约参数需要的数据结构
-    NFTData.push([[item.id, chooseTokenId, [buyCount]], total]);
-  });
-  // 上链
-  const buyTx = await contract.robustSwapETHForSpecificNFTs(
-    NFTData,
-    // 未用完的金额回退地址
-    address,
-    // nft接收地址
-    address,
-    // 超过这个时间,则取消购买
-    Date.parse(new Date()) / 1000 + 60 * 3600,
-    // 支付的总金额
-    { value: totalValue.toString() },
-  );
-  // 等待上链成功
-  const receipt = await buyTx.wait();
-  console.log('receipt', receipt);
+    // 等待上链成功
+    const receipt = await buyTx.wait();
+    console.log('receipt', receipt);
+  } catch (error) {
+    console.log('buyMultipleNFT', error);
+  }
 };
 
 /**
@@ -150,7 +157,9 @@ export const sellMultipleNFT = async ({
     // 0.995是默认滑点,
     // 原因: 出售NFT有保险机制,低于total就取消出售,防止夹子.
     // 计算库精度较高,计算参数可能因为四舍五入导致误差,所以设置默认滑点消除误差
-    const total = utils.parseEther((priceItem.priceData.userSellPrice * 0.995).toString());
+    const total = utils.parseEther((priceItem.priceData.userSellPrice * 0.995)
+      .toFixed(5)
+      .toString());
     totalValue += Number(total);
     // todo 想要出售的NFT,1155一个池子只允许有一个tokenId,所以直接取字段,
     //  721因为一个池子可能有多个tokenId,需要根据用户的选择设置值,demo默认选择了第一个
