@@ -88,8 +88,8 @@ const getPriceData = ({
 
 const curveAddressMap = {
   '0x05': {
-    Exponential: '0x3dAFd2E40f94dDf289Aa209298c010A3775c8Cb0',
-    Linear: '0xD38E321D0B450DF866B836612FBB5EECE3e4804e',
+    Exponential: '0x29049b09299fE2A874a64927F172392a94f2a801',
+    Linear: '0x59B0a72Dab61Db40b7a4ca68886D4c3666706104',
   },
   '0x89': {
     Exponential: '0x3dAFd2E40f94dDf289Aa209298c010A3775c8Cb0',
