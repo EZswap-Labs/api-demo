@@ -102,7 +102,7 @@ const curveAddressMap = {
 };
 const CollectionAddress = {
   '0x05': {
-    ERC721: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
+    ERC721: '0x05fdbac96c17026c71681150aa44cbd0dddd3374',
     ERC1155: '0x4f639fE811181E9e11269fb66ffC9308de9A9Cd5',
   },
   '0x89': {
