@@ -134,14 +134,16 @@ function CreatePool() {
         return;
       }
       const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
-
       let total = '0';
+      const delta = values?.model === 'Exponential'
+        ? utils.parseEther((values.delta + 1)?.toString())
+        : utils.parseEther(values?.delta?.toString());
       const params = [
         values?.collectionAddress, // NFT地址
         curveAddressMap[chainIdHex]?.[values?.model], // 价格模型地址
         values.poolType === 'trade' ? '0x0000000000000000000000000000000000000000' : address, // assetRecipient
         poolTypeMap?.[values.poolType], // buy: 0, sell: 1, trade: 2,
-        utils.parseEther(values?.delta?.toString()), // delta
+        delta,
         utils.parseEther(values?.fee?.toString()), // fee 只有trade池子才有
         utils.parseEther(values?.spotPrice?.toString()), // 开始价格
         [], // initialNFTIDs
@@ -160,7 +162,6 @@ function CreatePool() {
         params[8] = values?.poolType === 'buy' ? 0 : values?.sellNftCount; // 卖的个数
       }
       params.push({ value: utils.parseEther(total) });
-
       createPair({ tokenType: values?.tokenType, params, chainId: chainIdHex });
     },
   });
