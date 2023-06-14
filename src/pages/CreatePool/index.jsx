@@ -49,10 +49,11 @@ const getPriceData = ({
   try {
     let buyPriceData;
     let sellPriceData;
-    let deltaTemp = delta;
-    if (deltaTemp === 'trade') {
-      deltaTemp += 1;
-    }
+    // let deltaTemp = delta;
+    // if (model === 'Exponential') {
+    //   deltaTemp += 1;
+    // }
+    console.log('delta', delta);
     if (poolType === 'buy' || poolType === 'trade') {
       buyPriceData = mathLib?.[model]?.[poolType](
         startPrice,
@@ -90,6 +91,10 @@ const curveAddressMap = {
     Exponential: '0x3dAFd2E40f94dDf289Aa209298c010A3775c8Cb0',
     Linear: '0xD38E321D0B450DF866B836612FBB5EECE3e4804e',
   },
+  '0x89': {
+    Exponential: '0x3dAFd2E40f94dDf289Aa209298c010A3775c8Cb0',
+    Linear: '0xD38E321D0B450DF866B836612FBB5EECE3e4804e',
+  },
   '0x0118': {
     Exponential: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
     Linear: '0x4f639fE811181E9e11269fb66ffC9308de9A9Cd5',
@@ -97,6 +102,10 @@ const curveAddressMap = {
 };
 const CollectionAddress = {
   '0x05': {
+    ERC721: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
+    ERC1155: '0x4f639fE811181E9e11269fb66ffC9308de9A9Cd5',
+  },
+  '0x89': {
     ERC721: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
     ERC1155: '0x4f639fE811181E9e11269fb66ffC9308de9A9Cd5',
   },
@@ -135,15 +144,28 @@ function CreatePool() {
       }
       const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
       let total = '0';
-      const delta = values?.model === 'Exponential'
-        ? utils.parseEther((values.delta + 1)?.toString())
-        : utils.parseEther(values?.delta?.toString());
+      let delta = 0;
+
+      const priceData = getPriceData(formik?.values);
+      const { poolType = 'buy' } = formik.values || {};
+      if (poolType === 'buy') {
+        delta = priceData?.buyPriceData?.priceData?.delta;
+      }
+      if (poolType === 'sell') {
+        delta = priceData?.sellPriceData?.priceData?.delta;
+      }
+      if (poolType === 'trade') {
+        delta = priceData?.sellPriceData?.priceData?.delta
+        || priceData?.buyPriceData?.priceData?.delta;
+      }
+      console.log('delta', delta);
+      console.log('delta', utils.parseEther(delta?.toString()));
       const params = [
         values?.collectionAddress, // NFT地址
         curveAddressMap[chainIdHex]?.[values?.model], // 价格模型地址
         values.poolType === 'trade' ? '0x0000000000000000000000000000000000000000' : address, // assetRecipient
         poolTypeMap?.[values.poolType], // buy: 0, sell: 1, trade: 2,
-        delta,
+        utils.parseEther(delta?.toString()),
         utils.parseEther(values?.fee?.toString()), // fee 只有trade池子才有
         utils.parseEther(values?.spotPrice?.toString()), // 开始价格
         [], // initialNFTIDs
@@ -277,7 +299,7 @@ function CreatePool() {
                 value={formik.values.delta}
                 onChange={formik.handleChange}
                 name="delta"
-                label="delta"
+                label={formik.values.model === 'Exponential' ? 'delta(%)' : 'delta'}
                 variant="outlined"
                 sx={{ my: 2, mx: 2 }}
               />

@@ -6,7 +6,7 @@ import {
   RainbowKitProvider,
 } from '@rainbow-me/rainbowkit';
 import {
-  mainnet, polygon, goerli, zkSyncTestnet,
+  mainnet, polygon, goerli, zkSyncTestnet, polygonMumbai,
 } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
 import {
@@ -20,7 +20,7 @@ import MathLib from './pages/MathLib';
 import CreatePool from './pages/CreatePool';
 
 const { chains, provider } = configureChains(
-  [goerli, zkSyncTestnet],
+  [goerli, zkSyncTestnet, polygon],
   [
     alchemyProvider({ apiKey: 'eeb2JnW2JdlOkqPH6NZVhVpRSXKaSW8D' }),
     publicProvider(),

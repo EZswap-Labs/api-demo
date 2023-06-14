@@ -6,6 +6,7 @@ import ZKFactory from '../ABI/ZK/Factory.json';
 // 调用的路由合约
 const routerAddress = {
   '0x05': '0x183Eb45a05EA5456A6D329bb76eA6C6DABb375a6',
+  '0x89': '0x7452c6e193298a2df001ea38b6369fbdc0a38123',
   '0x0118': '0xC72564dCEe45a8DEf91dA25F875719c2f1Fa8fad',
 };
 
@@ -262,6 +263,7 @@ export const createPair = async ({ tokenType = 'ERC721', params, chainId }) => {
     const signer = provider.getSigner();
     const createPairContract = new ethers.Contract(LSSVMPairFactory?.[chainId], ABI, signer);
     let createTx;
+    // params.push()
     if (tokenType === 'ERC721') {
       createTx = await createPairContract.createPairETH(...params);
     } else {
