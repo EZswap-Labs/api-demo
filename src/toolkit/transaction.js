@@ -253,7 +253,7 @@ export const createZKPair = async ({ tokenType = 'ERC721', params, chainId }) =>
 
 // 创建池子
 export const createPair = async ({ tokenType = 'ERC721', params, chainId }) => {
-  if (chainId === '0x0118') {
+  if (chainId) {
     createZKPair({ tokenType, params, chainId });
     return;
   }
