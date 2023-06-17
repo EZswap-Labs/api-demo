@@ -18,7 +18,6 @@ const LSSVMPairFactory = {
 
 export const setApproval = async ({ nftContractAddress, chainId }) => {
   const approvedForAllAbi = [
-    'function isApprovedForAll(address owner, address operator) public view returns (bool)',
     'function setApprovalForAll(address,bool) public',
   ];
   const provider = new ethers.providers.Web3Provider(window?.ethereum);
@@ -28,6 +27,37 @@ export const setApproval = async ({ nftContractAddress, chainId }) => {
   const res = await transition.wait();
   console.log('res', res);
   toast.success('success');
+};
+
+export const isApproval = async ({ nftContractAddress, userAddress, chainId }) => {
+  console.log('nftContractAddress, userAddress, chainId', nftContractAddress, userAddress, chainId);
+  const approvedForAllAbi = ['function isApprovedForAll(address owner, address operator) public view returns (bool)'];
+  const provider = new ethers.providers.Web3Provider(window?.ethereum);
+  const signer = provider.getSigner();
+  const nftContract = new ethers.Contract(nftContractAddress, approvedForAllAbi, signer);
+  console.log('nftContract', nftContract);
+  const isApproved = await nftContract.isApprovedForAll(userAddress, LSSVMPairFactory?.[chainId]);
+  console.log('isApproved', isApproved);
+  return isApproved;
+};
+
+export const approveToken = async ({ tokenAddress, amount, chainId }) => {
+  const approvedAbi = ['function approve(address _spender, uint256 _value) public returns (bool)'];
+  const provider = new ethers.providers.Web3Provider(window?.ethereum);
+  const signer = provider.getSigner();
+  const tokenContract = new ethers.Contract(tokenAddress, approvedAbi, signer);
+  const isApproved = await tokenContract.approve(LSSVMPairFactory?.[chainId], amount);
+  console.log('isApproved', isApproved);
+  return isApproved;
+};
+
+export const allowanceToken = async ({ tokenAddress, userAddress, chainId }) => {
+  const approvedAbi = ['function allowance(address _owner, address _spender) public view returns (uint256)'];
+  const provider = new ethers.providers.Web3Provider(window?.ethereum);
+  const signer = provider.getSigner();
+  const tokenContract = new ethers.Contract(tokenAddress, approvedAbi, signer);
+  const amount = await tokenContract.allowance(userAddress, LSSVMPairFactory?.[chainId]);
+  return Number(utils.formatEther(amount));
 };
 
 // const formatCeilNumber = (value) => (Math.ceil(value * 10000) / 10000);
@@ -196,51 +226,51 @@ export const createPairABI = ['function createPairETH(address,address,address,ui
 export const createPairABI1155 = ['function createPair1155ETH(address,address,address,uint8,uint128,uint96,uint128,uint256,uint256) external payable returns(address)'];
 
 export const createZKPair = async ({ tokenType = 'ERC721', params, chainId }) => {
+  console.log('tokenType', tokenType);
   try {
     const ABI = ZKFactory.abi;
     const provider = new ethers.providers.Web3Provider(window?.ethereum);
     const signer = provider.getSigner();
     const createPairContract = new ethers.Contract(LSSVMPairFactory?.[chainId], ABI, signer);
-    const create721Params = [
-      {
-        nft: params?.[0],
-        bondingCurve: params?.[1],
-        assetRecipient: params?.[2],
-        poolType: params?.[3],
-        delta: params?.[4],
-        fee: params?.[5],
-        spotPrice: params?.[6],
-        // initialNFTIDs: [],
-        initialNFTIDs: params?.[7],
-      },
-      {
-        value: params?.[8]?.value,
-      },
-    ];
-    console.log('create721Params', create721Params);
-    const create1155Params = [
-      {
-        nft: params?.[0],
-        bondingCurve: params?.[1],
-        assetRecipient: params?.[2],
-        poolType: params?.[3],
-        delta: params?.[4],
-        fee: params?.[5],
-        spotPrice: params?.[6],
-        nftId: params?.[7],
-        initialNFTCount: params?.[8],
-      },
-      {
-        value: params?.[9]?.value || '0x00',
-      },
-    ];
-
+    let createParams = null;
     let createTx = null;
     if (tokenType === 'ERC721') {
-      // createTx = await createPairContract.createPairETH([...params]);
-      createTx = await createPairContract.createPairETH(...create721Params);
+      createParams = [
+        {
+          nft: params?.[0],
+          bondingCurve: params?.[1],
+          assetRecipient: params?.[2],
+          poolType: params?.[3],
+          delta: params?.[4],
+          fee: params?.[5],
+          spotPrice: params?.[6],
+          initialNFTIDs: params?.[7],
+        },
+        {
+          value: params?.[8]?.value,
+        },
+      ];
+      createTx = await createPairContract.createPairETH(...createParams);
+    } else if (tokenType === 'ERC1155') {
+      createParams = [
+        {
+          nft: params?.[0],
+          bondingCurve: params?.[1],
+          assetRecipient: params?.[2],
+          poolType: params?.[3],
+          delta: params?.[4],
+          fee: params?.[5],
+          spotPrice: params?.[6],
+          nftId: params?.[7],
+          initialNFTCount: params?.[8],
+        },
+        {
+          value: params?.[9]?.value || '0x00',
+        },
+      ];
+      createTx = await createPairContract.createPair1155ETH(...createParams);
     } else {
-      createTx = await createPairContract.createPair1155ETH(...create1155Params);
+      createTx = await createPairContract.createPairERC20([...params]);
     }
     const receipt = await createTx.wait();
     console.log('receipt', receipt);

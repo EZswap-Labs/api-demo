@@ -11,7 +11,9 @@ import mathLib from 'ezswap_math';
 import { toast } from 'react-toastify';
 import { ethers, utils } from 'ethers';
 import Header from '../../components/Header';
-import { createPair, setApproval } from '../../toolkit/transaction';
+import {
+  createPair, setApproval, approveToken, allowanceToken,
+} from '../../toolkit/transaction';
 
 const myJsonObject = {
   priceData: {
@@ -39,7 +41,9 @@ const initialValues = {
   poolType: 'buy',
   tokenType: 'ERC721',
   collectionAddress: '0x8e81970ceb63c236534a763c0ecb611d2d16189f',
+  tokenAddress: '0x4Cc56c5A7F3030497FFDA610C7fb51e462b2DEbA',
   tokenId: 1,
+  initialTokenBalance: 100,
 };
 
 const getPriceData = ({
@@ -102,14 +106,17 @@ const curveAddressMap = {
 };
 const CollectionAddress = {
   '0x05': {
+    ERC20: '0x05fdbac96c17026c71681150aa44cbd0dddd3374',
     ERC721: '0x05fdbac96c17026c71681150aa44cbd0dddd3374',
     ERC1155: '0x4f639fE811181E9e11269fb66ffC9308de9A9Cd5',
   },
   '0x89': {
+    ERC20: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
     ERC721: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
     ERC1155: '0x4f639fE811181E9e11269fb66ffC9308de9A9Cd5',
   },
   '0x0118': {
+    ERC20: '0x2Fc83539F6299d3d7e88585EcBCbbC041db6fdDC',
     ERC721: '0x2Fc83539F6299d3d7e88585EcBCbbC041db6fdDC',
     ERC1155: '0xe76E5d203f453EEE315e954CdB98a7caae67691a',
   },
@@ -129,7 +136,7 @@ function CreatePool() {
   const chainId = useChainId();
   const formik = useFormik({
     initialValues,
-    onSubmit: (values) => {
+    onSubmit: async (values) => {
       if (!address) {
         toast.error('user address empty');
         return;
@@ -183,7 +190,33 @@ function CreatePool() {
         params[7] = parseInt(values?.tokenId, 10); // tokenId
         params[8] = values?.poolType === 'buy' ? 0 : values?.sellNftCount; // 卖的个数
       }
-      params.push({ value: utils.parseEther(total) });
+      if (values?.tokenType === 'ERC20') {
+        console.log('ERC20');
+        // 第一位
+        params.splice(0, 0, values?.tokenAddress);
+        // 后面
+        const amount = utils.parseEther(values?.initialTokenBalance?.toString());
+        params.push(amount);
+
+        // 判断是否已经 approve
+        console.log('ERC202');
+        const allowanceAmount = await allowanceToken({
+          tokenAddress: values?.tokenAddress,
+          userAddress: address,
+          chainId: chainIdHex,
+        });
+        console.log('allowanceAmount', allowanceAmount);
+        if (allowanceAmount < values?.initialTokenBalance) {
+          await approveToken({
+            tokenAddress: values?.tokenAddress,
+            amount,
+            chainId: chainIdHex,
+          });
+        }
+      } else {
+        params.push({ value: utils.parseEther(total) });
+      }
+      console.log('params', params);
       createPair({ tokenType: values?.tokenType, params, chainId: chainIdHex });
     },
   });
@@ -241,6 +274,7 @@ function CreatePool() {
                 value={formik.values.tokenType}
                 onChange={formik.handleChange}
               >
+                <FormControlLabel value="ERC20" control={<Radio />} label="ERC20" />
                 <FormControlLabel value="ERC721" control={<Radio />} label="ERC721" />
                 <FormControlLabel value="ERC1155" control={<Radio />} label="ERC1155" />
               </RadioGroup>
@@ -344,6 +378,28 @@ function CreatePool() {
                 variant="outlined"
                 sx={{ my: 2, mx: 2 }}
               />
+              {formik.values.tokenType === 'ERC20' ? (
+                <>
+                  <TextField
+                    type="text"
+                    value={formik.values.tokenAddress}
+                    onChange={formik.handleChange}
+                    name="tokenAddress"
+                    label="tokenAddress"
+                    variant="outlined"
+                    sx={{ my: 2, mx: 2 }}
+                  />
+                  <TextField
+                    type="text"
+                    value={formik.values.initialTokenBalance}
+                    onChange={formik.handleChange}
+                    name="initialTokenBalance"
+                    label="initialTokenBalance"
+                    variant="outlined"
+                    sx={{ my: 2, mx: 2 }}
+                  />
+                </>
+              ) : null}
               {formik.values.tokenType === 'ERC1155' ? (
                 <TextField
                   type="text"
@@ -398,16 +454,20 @@ function CreatePool() {
           <ReactJson src={priceJson} theme="monokai" />
         </Grid>
         <Grid item xs={6}>
-          <Typography sx={{ my: 2, mx: 2 }}>
-            deposit:
-            {deposit}
-            ETH
-          </Typography>
-          <Typography sx={{ my: 2, mx: 2 }}>
-            receive:
-            {receive}
-            ETH
-          </Typography>
+          {formik?.values?.tokenType !== 'ERC20' ? (
+            <>
+              <Typography sx={{ my: 2, mx: 2 }}>
+                deposit:
+                {deposit}
+                ETH
+              </Typography>
+              <Typography sx={{ my: 2, mx: 2 }}>
+                receive:
+                {receive}
+                ETH
+              </Typography>
+            </>
+          ) : null}
           <Button
             variant="contained"
             sx={{ m: 2 }}
