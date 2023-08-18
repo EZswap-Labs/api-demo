@@ -103,6 +103,10 @@ const curveAddressMap = {
     Exponential: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
     Linear: '0x4f639fE811181E9e11269fb66ffC9308de9A9Cd5',
   },
+  '0x013881': {
+    Exponential: '0x20C318AA7c2eC1190F20D41EB6C6F3Ec9f5955fe',
+    Linear: '0x9Be2Dc731bFf38B0a5D893c7a5ECE8e170c67b86',
+  },
 };
 const CollectionAddress = {
   '0x05': {
@@ -119,6 +123,11 @@ const CollectionAddress = {
     ERC20: '0x2Fc83539F6299d3d7e88585EcBCbbC041db6fdDC',
     ERC721: '0x2Fc83539F6299d3d7e88585EcBCbbC041db6fdDC',
     ERC1155: '0xe76E5d203f453EEE315e954CdB98a7caae67691a',
+  },
+  '0x013881': {
+    ERC20: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
+    ERC721: '0xE8F6631a16F90383A1C956114EB30B8c3705e947',
+    ERC1155: '0x4f639fE811181E9e11269fb66ffc93日8de9A9Cd5',
   },
 };
 
@@ -486,6 +495,7 @@ function CreatePool() {
                 setApproval({
                   nftContractAddress: formik.values.collectionAddress,
                   chainId: chainIdHex,
+                  createOrSwap: 'create',
                 });
               }}
             >

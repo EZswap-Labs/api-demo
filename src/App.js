@@ -20,7 +20,7 @@ import MathLib from './pages/MathLib';
 import CreatePool from './pages/CreatePool';
 
 const { chains, provider } = configureChains(
-  [goerli, zkSyncTestnet, polygon],
+  [goerli, zkSyncTestnet, polygon, polygonMumbai],
   [
     alchemyProvider({ apiKey: 'eeb2JnW2JdlOkqPH6NZVhVpRSXKaSW8D' }),
     publicProvider(),

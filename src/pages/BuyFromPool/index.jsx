@@ -20,6 +20,8 @@ function BuyFromPool() {
       network = 'zks_dev';
     } else if (chainId === 137) {
       network = 'polygon';
+    } else if (chainId === 80001) {
+      network = 'Mumbai';
     }
     try {
       const res = await queryPoolListByPage({

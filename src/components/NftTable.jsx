@@ -120,6 +120,7 @@ export default function NftTable({
     setApproval({
       nftContractAddress,
       chainId: chainIdHex,
+      createOrSwap: 'swap',
     });
   };
 

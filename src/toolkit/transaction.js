@@ -8,22 +8,24 @@ const routerAddress = {
   '0x05': '0xE6e9a0E4faA67F647F0cbAf633B2e624F141498a',
   '0x89': '0x3d51749Cb2Db7355392100BAc202216BE7071E66',
   '0x0118': '0xC72564dCEe45a8DEf91dA25F875719c2f1Fa8fad',
+  '0x013881': '0x3d51749Cb2Db7355392100BAc202216BE7071E66',
 };
 
 const LSSVMPairFactory = {
   '0x05': '0x5a1CA387586BC305ac3592b7d030d4A18aBD7d8a',
   '0x0118': '0xBcB7032c1e1Ea0Abc3850590349560e1333d6848',
   '0x89': '0x353F4106641Db62384cF0e4F1Ef15F8Ac9A9fb4B',
+  '0x013881': '0x353F4106641Db62384cF0e4F1Ef15F8Ac9A9fb4B',
 };
 
-export const setApproval = async ({ nftContractAddress, chainId }) => {
+export const setApproval = async ({ nftContractAddress, chainId, createOrSwap }) => {
   const approvedForAllAbi = [
     'function setApprovalForAll(address,bool) public',
   ];
   const provider = new ethers.providers.Web3Provider(window?.ethereum);
   const signer = provider.getSigner();
   const nftContract = new ethers.Contract(nftContractAddress, approvedForAllAbi, signer);
-  const transition = await nftContract.setApprovalForAll(routerAddress?.[chainId], true);
+  const transition = await nftContract.setApprovalForAll(createOrSwap === 'swap' ? routerAddress?.[chainId] : LSSVMPairFactory?.[chainId], true);
   const res = await transition.wait();
   console.log('res', res);
   toast.success('success');
