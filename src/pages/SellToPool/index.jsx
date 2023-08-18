@@ -16,7 +16,10 @@ function BuyFromPool() {
     let network = 'dev';
     if (chainId === 280) {
       network = 'zks_dev';
+    } else if (chainId === 137) {
+      network = 'polygon';
     }
+    console.log('chainId', chainId);
     try {
       const res = await queryPoolListByPage({
         contractAddress,

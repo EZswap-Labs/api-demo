@@ -14,9 +14,12 @@ function BuyFromPool() {
   const [poolList, setPoolList] = useState([]);
   const chainId = useChainId();
   const getPoolList = async () => {
+    console.log('chainId', chainId);
     let network = 'dev';
     if (chainId === 280) {
       network = 'zks_dev';
+    } else if (chainId === 137) {
+      network = 'polygon';
     }
     try {
       const res = await queryPoolListByPage({
