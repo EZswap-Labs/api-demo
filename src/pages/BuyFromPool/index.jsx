@@ -22,6 +22,10 @@ function BuyFromPool() {
       network = 'polygon';
     } else if (chainId === 80001) {
       network = 'Mumbai';
+    } else if (chainId === 42161) {
+      network = 'arbone';
+    } else if (chainId === 421613) {
+      network = 'arbgoerli';
     }
     try {
       const res = await queryPoolListByPage({
