@@ -32,7 +32,7 @@ const initialValues = {
   spotPrice: 1,
   delta: 0.1,
   fee: 0,
-  protocolFee: 0.001,
+  protocolFee: 0.005,
   projectFee: 0,
   buyNftCount: 1,
   sellNftCount: 1,
@@ -92,24 +92,28 @@ const getPriceData = ({
 
 const curveAddressMap = {
   '0x05': {
-    Exponential: '0x29049b09299fE2A874a64927F172392a94f2a801',
     Linear: '0x59B0a72Dab61Db40b7a4ca68886D4c3666706104',
+    Exponential: '0x29049b09299fE2A874a64927F172392a94f2a801',
   },
   '0x89': {
-    Exponential: '0x20C318AA7c2eC1190F20D41EB6C6F3Ec9f5955fe',
     Linear: '0x9Be2Dc731bFf38B0a5D893c7a5ECE8e170c67b86',
+    Exponential: '0x20C318AA7c2eC1190F20D41EB6C6F3Ec9f5955fe',
   },
   '0x0118': {
-    Exponential: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
     Linear: '0x4f639fE811181E9e11269fb66ffC9308de9A9Cd5',
+    Exponential: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
   },
   '0x013881': {
-    Exponential: '0x20C318AA7c2eC1190F20D41EB6C6F3Ec9f5955fe',
     Linear: '0x9Be2Dc731bFf38B0a5D893c7a5ECE8e170c67b86',
+    Exponential: '0x20C318AA7c2eC1190F20D41EB6C6F3Ec9f5955fe',
+  },
+  '0xa4b1': {
+    Linear: '0x9Be2Dc731bFf38B0a5D893c7a5ECE8e170c67b86',
+    Exponential: '0x20C318AA7c2eC1190F20D41EB6C6F3Ec9f5955fe',
   },
   '0x066eed': {
-    Exponential: '0xe87a7986Dc758f44E15B8eb5cA3C86Ccb49d1512',
     Linear: '0xD7d30a3069E034558e2639325EB89f87E4fCB001',
+    Exponential: '0xe87a7986Dc758f44E15B8eb5cA3C86Ccb49d1512',
   },
 };
 const CollectionAddress = {
@@ -133,10 +137,15 @@ const CollectionAddress = {
     ERC721: '0xE8F6631a16F90383A1C956114EB30B8c3705e947',
     ERC1155: '0x4f639fE811181E9e11269fb66ffc938de9A9Cd5',
   },
-  '0x066eed': {
+  '0xa4b1': {
     ERC20: '0xd3e02292A7730560a1BaC2207642864A5F332C0c',
-    ERC721: '0xA4ef6D39c3E6Fe406608c5C3CFDa7E4A2DcbC1f1',
+    ERC721: '0xB32eFC47Bf503B3593a23204cF891295a85115Ea',
     ERC1155: '0x4f639fE811181E9e11269fb66ffc938de9A9Cd5',
+  },
+  '0x066eed': {
+    ERC20: '0xFBD152E487A8d5c638365357F6bdfa197C150992',
+    ERC721: '0xEd3671491160F711cE9C56F9596c45294f3F049a',
+    ERC1155: '0xf6f562Da11e38d905e6eEA9c2FF6Ae716135BaC9',
   },
 };
 
