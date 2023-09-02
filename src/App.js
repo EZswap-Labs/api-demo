@@ -19,8 +19,29 @@ import SellToPool from './pages/SellToPool';
 import MathLib from './pages/MathLib';
 import CreatePool from './pages/CreatePool';
 
+const neoevm = {
+  id: 2970385,
+  name: 'NeoEVM Chain',
+  network: 'NeoEVM Chain',
+  iconBackground: '#008000',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'GAS',
+    symbol: 'GAS',
+  },
+  rpcUrls: {
+    public: { http: ['https://evm.ngd.network:32331'] },
+    default: { http: ['https://evm.ngd.network:32331'] },
+  },
+  blockExplorers: {
+    default: { name: 'ngd', url: 'https://evm.ngd.network/' },
+    etherscan: { name: 'ngd', url: 'https://evm.ngd.network/' },
+  },
+  testnet: true,
+};
+
 const { chains, provider } = configureChains(
-  [goerli, polygon, polygonMumbai, arbitrum, arbitrumGoerli, zkSyncTestnet],
+  [goerli, polygon, polygonMumbai, arbitrum, arbitrumGoerli, zkSyncTestnet, neoevm],
   [
     alchemyProvider({ apiKey: 'eeb2JnW2JdlOkqPH6NZVhVpRSXKaSW8D' }),
     publicProvider(),
