@@ -5,19 +5,27 @@ import {
 } from '@mui/material';
 import mathLib from 'ezswap_math';
 import {
-  utils, BigNumber, getDefaultProvider, ethers,
+  utils, BigNumber, getDefaultProvider, ethers, constants,
 } from 'ethers';
 import { toast } from 'react-toastify';
 import {
   useAccount, useConnect, useDisconnect, useClient, useChainId,
 } from 'wagmi';
-import { buyMultipleNFT, sellMultipleNFT, setApproval } from '../toolkit/transaction';
+import {
+  buyMultipleNFT, buyMultipleNFTERC20, sellMultipleNFT, setApproval, approveTokenRouter,
+} from '../toolkit/transaction';
 
 const NFTcolumns = [
   { field: 'id', headerName: 'ID', width: 100 },
 ];
 const columns = [
-  { field: 'id', headerName: 'Pool Address', width: 100 },
+  { field: 'id', headerName: 'pool address', width: 200 },
+  {
+    field: 'token address',
+    headerName: 'token address',
+    width: 400,
+    valueGetter: (data) => (data?.row?.token),
+  },
   {
     field: 'nftIds',
     headerName: 'nftIds',
@@ -34,19 +42,19 @@ const columns = [
   {
     field: 'spotPrice',
     headerName: 'spotPrice',
-    width: 200,
+    width: 100,
     valueGetter: (data) => (Number(utils.formatEther(data?.row?.spotPrice))),
   },
   {
     field: 'delta',
     headerName: 'delta',
-    width: 200,
+    width: 100,
     valueGetter: (data) => (Number(utils.formatEther(data?.row?.delta))),
   },
   {
     field: 'fee',
     headerName: 'swap fee',
-    width: 200,
+    width: 100,
     valueGetter: (data) => (Number(utils.formatEther(data?.row?.fee))),
   },
   {
@@ -55,7 +63,7 @@ const columns = [
     width: 100,
     valueGetter: (data) => (Number(utils.formatEther(data?.row?.protocolFee))),
   },
-  { field: 'gfee', headerName: 'gfee', width: 100 },
+  // { field: 'gfee', headerName: 'gfee', width: 100 },
 ];
 const calculatedColumns = [
   { field: 'id', headerName: 'ID', width: 100 },
@@ -80,7 +88,7 @@ export default function NftTable({
 
   // const [calculatedlist, setCalculatedlist] = React.useState([]);
   const [selectedKeys, setSelectedKeys] = React.useState([]);
-  const [tokenId, setTokenId] = React.useState('');
+  const [tokenId, setTokenId] = React.useState([]);
 
   /* React.useEffect(() => {
     const tempList = poolList
@@ -135,14 +143,23 @@ export default function NftTable({
     const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
     if (ActionType === 'Buy') {
       // 从池子里购买NFT,
-      buyMultipleNFT({
-        address,
-        selectedList,
-        chainId: chainIdHex,
-      });
+      if (selectedList[0].token === '0x0000000000000000000000000000000000000000') {
+        buyMultipleNFT({
+          address,
+          selectedList,
+          chainId: chainIdHex,
+        });
+      } else {
+        buyMultipleNFTERC20({
+          address,
+          selectedList,
+          chainId: chainIdHex,
+        });
+      }
     } else {
       // 将自己的NFT卖给池子
       // address:nft出售方
+      console.log('xxxxxxxx');
       sellMultipleNFT({
         address,
         selectedList,
@@ -215,10 +232,16 @@ export default function NftTable({
           <TextField
             label="tokenId"
             variant="outlined"
-            value={tokenId}
+            value={tokenId.join(',')}
             sx={{ mt: 2, mr: 2, width: '200px' }}
             onChange={(e) => {
-              setTokenId(e?.target?.value);
+              const inputString = e?.target?.value;
+              const validInput = /^[\d,]*$/.test(inputString);
+
+              if (validInput) {
+                const newTokenIds = inputString.split(',').map((id) => (id.trim()));
+                setTokenId(newTokenIds);
+              }
             }}
           />
           <Button
@@ -228,7 +251,7 @@ export default function NftTable({
             }}
             sx={{ m: 2 }}
           >
-            Approve
+            Approve NFT TO ROUTER
           </Button>
         </Box>
       ) : null}
@@ -241,6 +264,24 @@ export default function NftTable({
       >
         {actionType}
       </Button>
+      {actionType === 'Buy' ? (
+        <Button
+          variant="contained"
+          onClick={async () => {
+            const amount = constants.MaxUint256;
+            const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
+            const selectedList = selectedKeys?.map((key) => poolList.find((c) => c.id === key));
+            await approveTokenRouter({
+              tokenAddress: selectedList[0].token,
+              amount,
+              chainId: chainIdHex,
+            });
+          }}
+          sx={{ m: 2 }}
+        >
+          Approve ERC20 TO ROUTER
+        </Button>
+      ) : null}
     </Box>
   );
 }

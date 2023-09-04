@@ -11,6 +11,7 @@ const routerAddress = {
   '0x013881': '0x3d51749Cb2Db7355392100BAc202216BE7071E66',
   '0xa4b1': '0x2A95E4FDF5F12B9E9AC627fEcbF70420D3202db1',
   '0x066eed': '0x11AA93F7f1ffE58eb42ae0A5d79f7f75321AcB45',
+  '0x2d5311': '0xF7Dbd98fF399CEeD40D58e20A8cC876752DDD7d2',
 };
 
 const LSSVMPairFactory = {
@@ -20,6 +21,7 @@ const LSSVMPairFactory = {
   '0x013881': '0x353F4106641Db62384cF0e4F1Ef15F8Ac9A9fb4B',
   '0xa4b1': '0x3d51749Cb2Db7355392100BAc202216BE7071E66',
   '0x066eed': '0x9D79c95314eB049e1FAFEAf14bc7B221Baf95F81',
+  '0x2d5311': '0x6D4dD244BEFAfE26274f206E8eee5a7dbe72bFfE',
 };
 
 export const setApproval = async ({ nftContractAddress, chainId, createOrSwap }) => {
@@ -53,7 +55,21 @@ export const approveToken = async ({ tokenAddress, amount, chainId }) => {
   const signer = provider.getSigner();
   const tokenContract = new ethers.Contract(tokenAddress, approvedAbi, signer);
   const isApproved = await tokenContract.approve(LSSVMPairFactory?.[chainId], amount);
+  const res = await isApproved.wait();
   console.log('isApproved', isApproved);
+  toast.success('success');
+  return isApproved;
+};
+
+export const approveTokenRouter = async ({ tokenAddress, amount, chainId }) => {
+  const approvedAbi = ['function approve(address _spender, uint256 _value) public returns (bool)'];
+  const provider = new ethers.providers.Web3Provider(window?.ethereum);
+  const signer = provider.getSigner();
+  const tokenContract = new ethers.Contract(tokenAddress, approvedAbi, signer);
+  const isApproved = await tokenContract.approve(routerAddress?.[chainId], amount);
+  const res = await isApproved.wait();
+  console.log('isApproved', isApproved);
+  toast.success('success');
   return isApproved;
 };
 
@@ -161,6 +177,72 @@ export const buyMultipleNFT = async ({
   }
 };
 
+export const buyMultipleNFTERC20 = async ({
+  address, selectedList, chainId,
+}) => {
+  try {
+    // init provider
+    const buyAbi = ['function robustSwapERC20ForSpecificNFTs(tuple(tuple(address,uint256[],uint256[]),uint256)[],uint256,address,uint256) public returns (uint256)'];
+    const provider = new ethers.providers.Web3Provider(window?.ethereum);
+    const signer = provider.getSigner();
+    const contract = new ethers.Contract(routerAddress?.[chainId], buyAbi, signer);
+    // init provider
+    const NFTData = [];
+    // todo 721:选择nft的数量, 1155: 该nft tokenId想要买的数量
+    const buyCount = 1;
+    let totalValue = 0;
+    // 循环选中的每个池子,整理成合约需要的参数.totalValue:购买所有NFT的总价
+    selectedList.forEach((item) => {
+      // todo 项目方协议费,自定义设置 例:0.5%计算时换算成0.005
+      const projectFee = 0.005;
+      // 计算购买NFT需要的金额
+      // let { delta } = item;
+      // if (item.type === 'trade') {
+      //   delta += 1;
+      // }
+      const nftPrice = mathLib[item.bondingCurve]?.[item.type](
+        Number(utils.formatEther(item.spotPrice)),
+        Number(utils.formatEther(item.delta)),
+        Number(utils.formatEther(item.fee)),
+        Number(utils.formatEther(item.protocolFee)),
+        projectFee,
+        buyCount,
+        'read',
+      );
+      // const formatMoney = formatCeilNumber();
+      // 计算的结果单位是E,需要转成wei传给合约
+      // 1.005是默认滑点,
+      // 原因: 买NFT有保险机制,超过total就取消购买,防止夹子.
+      // 计算库精度较高,计算参数可能因为四舍五入导致误差,所以设置默认滑点消除误差
+      const total = utils.parseEther((nftPrice.priceData.userBuyPrice * 1.005)
+        .toFixed(5)
+        .toString());
+      totalValue += Number(total);
+      // todo 想要购买的NFT,1155一个池子只允许有一个tokenId,所以直接取字段,
+      //  721因为一个池子可能有多个tokenId,需要根据用户的选择设置值,demo默认选择了第一个
+      const chooseTokenId = [item.is1155 ? Number(item.nftId1155) : Number(item.nftIds?.[0])];
+      // 构造合约参数需要的数据结构
+      NFTData.push([[item.id, chooseTokenId, [buyCount]], total]);
+    });
+    // 上链
+    console.log(NFTData);
+    const buyTx = await contract.robustSwapERC20ForSpecificNFTs(
+      NFTData,
+      // 支付的总金额
+      ethers.BigNumber.from(totalValue.toString()),
+      // nft接收地址
+      address,
+      // 超过这个时间,则取消购买
+      Date.parse(new Date()) / 1000 + 60 * 3600,
+    );
+    // 等待上链成功
+    const receipt = await buyTx.wait();
+    console.log('receipt', receipt);
+  } catch (error) {
+    console.log('buyMultipleNFT', error);
+  }
+};
+
 /**
  * 支持一次性将NFT卖给多个池子,能够实现购物车功能
  * @param address 未用完的金额回退地址
@@ -178,7 +260,7 @@ export const sellMultipleNFT = async ({
   // init provider
   let totalValue = 0;
   const NFTData = [];
-  // todo 721:选择nft的数量, 1155: 该nft tokenId想要卖的数量
+  // todo 721:选择nft的数量, 1155: 该nft token Id想要卖的数量
   const sellCount = 1;
   // 循环选中的每个池子,整理成合约需要的参数.
   selectedList.forEach((item) => {
@@ -209,7 +291,7 @@ export const sellMultipleNFT = async ({
     // todo 想要出售的NFT,1155一个池子只允许有一个tokenId,所以直接取字段,
     //  721因为一个池子可能有多个tokenId,需要根据用户的选择设置值,demo默认选择了第一个
     // 构造合约参数需要的数据结构
-    NFTData.push([[item.id, [tokenId], [sellCount]], total]);
+    NFTData.push([[item.id, tokenId, [sellCount]], total]);
     // const chooseTokenId = [item.is1155 ? Number(item.nftId1155) :
     //  Number(item?.nftIds?.split(',')[0])];
     // NFTData.push([[item.id, chooseTokenId, [sellCount]], total]);
@@ -284,6 +366,66 @@ export const createZKPair = async ({ tokenType = 'ERC721', params, chainId }) =>
     toast.error(error?.message);
     console.log('error: ', error);
     // console.log('error: ', error.error);
+  }
+};
+
+export const createV2Pair = async ({ ttttype, params, chainId }) => {
+  try {
+    const ABI = ZKFactory.abi;
+    const provider = new ethers.providers.Web3Provider(window?.ethereum);
+    const signer = provider.getSigner();
+    console.log(params);
+    console.log(chainId, LSSVMPairFactory['0x066eed']);
+    const createPairContract = new ethers.Contract(LSSVMPairFactory?.[chainId], ABI, signer);
+    console.log(createPairContract.address);
+    let createParams = null;
+    let createTx = null;
+
+    if (ttttype === 'ERC721-NativeToken') {
+      createParams = [
+        {
+          nft: params?.[0],
+          bondingCurve: params?.[1],
+          assetRecipient: params?.[2],
+          poolType: params?.[3],
+          delta: params?.[4],
+          fee: params?.[5],
+          spotPrice: params?.[6],
+          initialNFTIDs: params?.[7],
+        },
+        {
+          value: params?.[8]?.value,
+        },
+      ];
+      createTx = await createPairContract.createPairETH(...createParams);
+    } else if (ttttype === 'ERC1155-NativeToken') {
+      createParams = [
+        {
+          nft: params?.[0],
+          bondingCurve: params?.[1],
+          assetRecipient: params?.[2],
+          poolType: params?.[3],
+          delta: params?.[4],
+          fee: params?.[5],
+          spotPrice: params?.[6],
+          nftId: params?.[7],
+          initialNFTCount: params?.[8],
+        },
+        {
+          value: params?.[9]?.value || '0x00',
+        },
+      ];
+      createTx = await createPairContract.createPair1155ETH(...createParams);
+    } else if (ttttype === 'ERC721-ERC20') {
+      createTx = await createPairContract.createPairERC20([...params]);
+    } else if (ttttype === 'ERC1155-ERC20') {
+      createTx = await createPairContract.createPair1155ERC20([...params]);
+    }
+    const receipt = await createTx.wait();
+    console.log('receipt', receipt);
+  } catch (error) {
+    toast.error(error?.message);
+    console.log('error: ', error);
   }
 };
 

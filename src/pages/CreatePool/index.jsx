@@ -1,6 +1,6 @@
 import {
   FormControl, FormLabel, RadioGroup, Radio, Grid, TextField,
-  FormControlLabel, Button, Box, Stack, Typography,
+  FormControlLabel, Button, Box, Stack, Typography, Divider,
 } from '@mui/material';
 import ReactJson from 'react-json-view';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
@@ -9,10 +9,10 @@ import { useFormik } from 'formik';
 import { useAccount, useChainId } from 'wagmi';
 import mathLib from 'ezswap_math';
 import { toast } from 'react-toastify';
-import { ethers, utils } from 'ethers';
+import { ethers, utils, constants } from 'ethers';
 import Header from '../../components/Header';
 import {
-  createPair, setApproval, approveToken, allowanceToken,
+  createPair, setApproval, approveToken, allowanceToken, createV2Pair,
 } from '../../toolkit/transaction';
 
 const myJsonObject = {
@@ -40,10 +40,12 @@ const initialValues = {
   model: 'Linear',
   poolType: 'buy',
   tokenType: 'ERC721',
+  ttttype: 'ERC721-NativeToken',
   collectionAddress: '0x8e81970ceb63c236534a763c0ecb611d2d16189f',
-  tokenAddress: '0x4Cc56c5A7F3030497FFDA610C7fb51e462b2DEbA',
+  tokenAddress: '0xFBD152E487A8d5c638365357F6bdfa197C150992',
   tokenId: 1,
-  initialTokenBalance: 100,
+  initialTokenBalance: 10,
+  nftIds: [5, 6],
 };
 
 const getPriceData = ({
@@ -115,6 +117,10 @@ const curveAddressMap = {
     Linear: '0xD7d30a3069E034558e2639325EB89f87E4fCB001',
     Exponential: '0xe87a7986Dc758f44E15B8eb5cA3C86Ccb49d1512',
   },
+  '0x2d5311': {
+    Linear: '0xB32eFC47Bf503B3593a23204cF891295a85115Ea',
+    Exponential: '0xE567f07cD4aeC9AEDD8A54E4F2A4d24de204eB98',
+  },
 };
 const CollectionAddress = {
   '0x05': {
@@ -146,6 +152,11 @@ const CollectionAddress = {
     ERC20: '0xFBD152E487A8d5c638365357F6bdfa197C150992',
     ERC721: '0xEd3671491160F711cE9C56F9596c45294f3F049a',
     ERC1155: '0xf6f562Da11e38d905e6eEA9c2FF6Ae716135BaC9',
+  },
+  '0x2d5311': {
+    ERC20: '0x0eA28A599d162c7776B1c920914B425Ce6E33bC3',
+    ERC721: '0xb02074A8f4A59a03C815980560B5D8d1db4c2145',
+    ERC1155: '0x6baFf0EcD4390F6F75C6b37a8EFf2550cBdF9846',
   },
 };
 
@@ -194,6 +205,7 @@ function CreatePool() {
       }
       console.log('delta', delta);
       console.log('delta', utils.parseEther(delta?.toString()));
+
       const params = [
         values?.collectionAddress, // NFT地址
         curveAddressMap[chainIdHex]?.[values?.model], // 价格模型地址
@@ -204,47 +216,74 @@ function CreatePool() {
         utils.parseEther(values?.spotPrice?.toString()), // 开始价格
         [], // initialNFTIDs
       ];
+
       if (values?.poolType === 'buy') {
         total = deposit.toString();
       } else {
-        params[7] = [parseInt(values?.nftIds, 10)]; // tokenId
+        params[7] = values?.nftIds;
+        // params[7] = [parseInt(values?.nftIds, 10)]; // nftIds
       }
-      if (values?.tokenType === 'ERC1155') {
+
+      if (values?.ttttype === 'ERC721-NativeToken' || values?.ttttype === 'ERC721-ERC20') {
+        if (values?.ttttype === 'ERC721-ERC20') {
+          console.log('ERC20');
+          // 第一位
+          params.splice(0, 0, values?.tokenAddress);
+          // 后面
+          const amount = utils.parseEther(values?.initialTokenBalance?.toString());
+          params.push(amount);
+          // 判断是否已经 approve
+          const allowanceAmount = await allowanceToken({
+            tokenAddress: values?.tokenAddress,
+            userAddress: address,
+            chainId: chainIdHex,
+          });
+          console.log('allowanceAmount', allowanceAmount);
+          if (allowanceAmount < values?.initialTokenBalance) {
+            await approveToken({
+              tokenAddress: values?.tokenAddress,
+              amount,
+              chainId: chainIdHex,
+            });
+          }
+        } else if (values?.ttttype === 'ERC721-NativeToken') {
+          params.push({ value: utils.parseEther(total) });
+        }
+      } else if (values?.ttttype === 'ERC1155-NativeToken' || values?.ttttype === 'ERC1155-ERC20') {
         if (!(values?.tokenId) && values?.tokenId !== 0) {
           toast.error('tokenId empty');
           return;
         }
-        params[7] = parseInt(values?.tokenId, 10); // tokenId
+        params[7] = parseInt(values?.tokenId, 10); // nftId
         params[8] = values?.poolType === 'buy' ? 0 : values?.sellNftCount; // 卖的个数
-      }
-      if (values?.tokenType === 'ERC20') {
-        console.log('ERC20');
-        // 第一位
-        params.splice(0, 0, values?.tokenAddress);
-        // 后面
-        const amount = utils.parseEther(values?.initialTokenBalance?.toString());
-        params.push(amount);
 
-        // 判断是否已经 approve
-        console.log('ERC202');
-        const allowanceAmount = await allowanceToken({
-          tokenAddress: values?.tokenAddress,
-          userAddress: address,
-          chainId: chainIdHex,
-        });
-        console.log('allowanceAmount', allowanceAmount);
-        if (allowanceAmount < values?.initialTokenBalance) {
-          await approveToken({
+        if (values?.ttttype === 'ERC1155-ERC20') {
+          // 第一位
+          params.splice(0, 0, values?.tokenAddress);
+          // 后面
+          const amount = utils.parseEther(values?.initialTokenBalance?.toString());
+          params.push(amount);
+          // 判断是否已经 approve
+          const allowanceAmount = await allowanceToken({
             tokenAddress: values?.tokenAddress,
-            amount,
+            userAddress: address,
             chainId: chainIdHex,
           });
+          console.log('allowanceAmount', allowanceAmount);
+          if (allowanceAmount < values?.initialTokenBalance) {
+            await approveToken({
+              tokenAddress: values?.tokenAddress,
+              amount,
+              chainId: chainIdHex,
+            });
+          }
+        } else if (values?.ttttype === 'ERC1155-NativeToken') {
+          params.push({ value: utils.parseEther(total) });
         }
-      } else {
-        params.push({ value: utils.parseEther(total) });
       }
+
       console.log('params', params);
-      createPair({ tokenType: values?.tokenType, params, chainId: chainIdHex });
+      createV2Pair({ ttttype: values?.ttttype, params, chainId: chainIdHex });
     },
   });
 
@@ -284,37 +323,33 @@ function CreatePool() {
 
   useEffect(() => {
     console.log('chainId', ethers.BigNumber.from(chainId).toHexString());
-    formik.setFieldValue('collectionAddress', CollectionAddress[ethers.BigNumber.from(chainId).toHexString()][formik.values.tokenType]);
-  }, [chainId, formik.values.tokenType]);
+    if (formik?.values?.ttttype === 'ERC721-ERC20' || formik?.values?.ttttype === 'ERC721-NativeToken') {
+      formik.setFieldValue('collectionAddress', CollectionAddress[ethers.BigNumber.from(chainId).toHexString()].ERC721);
+    } else {
+      formik.setFieldValue('collectionAddress', CollectionAddress[ethers.BigNumber.from(chainId).toHexString()].ERC1155);
+    }
+    if (formik?.values?.ttttype === 'ERC721-ERC20' || formik?.values?.ttttype === 'ERC1155-ERC20') {
+      formik.setFieldValue('tokenAddress', CollectionAddress[ethers.BigNumber.from(chainId).toHexString()].ERC20);
+    }
+  }, [chainId, formik.values.ttttype]);
 
+  const options = [
+    { value: 'ERC721-NativeToken', label: 'ERC721-NativeToken' },
+    { value: 'ERC721-ERC20', label: 'ERC721-ERC20' },
+    { value: 'ERC1155-NativeToken', label: 'ERC1155-NativeToken' },
+    { value: 'ERC1155-ERC20', label: 'ERC1155-ERC20' },
+  ];
   return (
     <Box sx={{ my: 2 }}>
       <Header />
       <Grid container p={4}>
         <Grid item xs={12}>
           <FormControl onSubmit={formik.handleSubmit}>
-            <Stack flexDirection="row">
-              <FormLabel sx={{ my: 2, mx: 2 }} id="demo-controlled-radio-buttons-group">tokenType</FormLabel>
-              <RadioGroup
-                aria-labelledby="demo-controlled-radio-buttons-group"
-                name="tokenType"
-                value={formik.values.tokenType}
-                onChange={formik.handleChange}
-              >
-                <FormControlLabel value="ERC20" control={<Radio />} label="ERC20" />
-                <FormControlLabel value="ERC721" control={<Radio />} label="ERC721" />
-                <FormControlLabel value="ERC1155" control={<Radio />} label="ERC1155" />
-              </RadioGroup>
-              <FormLabel sx={{ my: 2, mx: 2 }} id="demo-controlled-radio-buttons-group">model</FormLabel>
-              <RadioGroup
-                aria-labelledby="demo-controlled-radio-buttons-group"
-                name="model"
-                value={formik.values.model}
-                onChange={formik.handleChange}
-              >
-                <FormControlLabel value="Linear" control={<Radio />} label="Linear" />
-                <FormControlLabel value="Exponential" control={<Radio />} label="Exponential" />
-              </RadioGroup>
+
+            <Divider />
+            {/* // 1 Select pool type */}
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: '2xl' }}>1 Select pool type</Typography>
+            <Stack flexDirection="row" sx={{ my: 4, mx: 2 }}>
               <FormLabel sx={{ my: 2, mx: 2 }} id="demo-controlled-radio-buttons-group">poolType</FormLabel>
               <RadioGroup
                 aria-labelledby="demo-controlled-radio-buttons-group"
@@ -326,23 +361,115 @@ function CreatePool() {
                 <FormControlLabel value="sell" control={<Radio />} label="sell" />
                 <FormControlLabel value="trade" control={<Radio />} label="trade" />
               </RadioGroup>
-              <FormLabel sx={{ my: 2, mx: 2 }} id="demo-controlled-radio-buttons-group">action</FormLabel>
+            </Stack>
+
+            <Divider />
+            {/* // 2 slect ttttype and approve collection and token */}
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: '2xl' }}>2 Select token pair type and approve collection and token</Typography>
+            <Stack flexDirection="row" sx={{ my: 4, mx: 2 }}>
+              <FormLabel sx={{ my: 2, mx: 2 }} id="demo-controlled-radio-buttons-group">ttttype</FormLabel>
               <RadioGroup
                 aria-labelledby="demo-controlled-radio-buttons-group"
-                name="action"
-                value={formik.values.action}
+                name="ttttype"
+                value={formik.values.ttttype}
                 onChange={formik.handleChange}
               >
-                <FormControlLabel value="create" control={<Radio />} label="create" />
+                {options.map((option) => (
+                  <div>
+                    <FormControlLabel
+                      value={option.value}
+                      control={<Radio />}
+                      label={option.label}
+                    />
+                    {(formik.values.ttttype === option.value) && (
+                      <TextField
+                        type="text"
+                        value={formik.values.collectionAddress}
+                        onChange={formik.handleChange}
+                        name="collectionAddress"
+                        label="collectionAddress"
+                        variant="outlined"
+                        sx={{ my: 2, mx: 2 }}
+                      />
+                    )}
+                    {(formik.values.ttttype === option.value && formik.values.poolType !== 'buy') ? (
+                      <Button
+                        variant="contained"
+                        sx={{ my: 3 }}
+                        onClick={async () => {
+                          const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
+                          await setApproval({
+                            nftContractAddress: formik.values.collectionAddress,
+                            chainId: chainIdHex,
+                            createOrSwap: 'create',
+                          });
+                        }}
+                      >
+                        Approve NFT
+                      </Button>
+                    ) : null}
+                    {(formik.values.ttttype === option.value && formik.values.poolType !== 'sell') && (formik.values.ttttype === 'ERC721-ERC20' || formik.values.ttttype === 'ERC1155-ERC20') ? (
+                      <>
+                        <TextField
+                          type="text"
+                          value={formik.values.tokenAddress}
+                          onChange={formik.handleChange}
+                          name="tokenAddress"
+                          label="tokenAddress"
+                          variant="outlined"
+                          sx={{ my: 2, mx: 2 }}
+                        />
+                        <Button
+                          variant="contained"
+                          sx={{ my: 3 }}
+                          onClick={async () => {
+                            const amount = constants.MaxUint256;
+                            const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
+                            await approveToken({
+                              tokenAddress: formik.values.tokenAddress,
+                              amount,
+                              chainId: chainIdHex,
+                            });
+                          }}
+                        >
+                          Approve ERC20
+                        </Button>
+                      </>
+                    ) : null}
+                  </div>
+                ))}
               </RadioGroup>
             </Stack>
-            <Stack flexDirection="row">
+
+            <Divider />
+            {/* // 3 slect ttttype and approve collection and token */}
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: '2xl' }}>3 set up relative data</Typography>
+            <Stack flexDirection="row" sx={{ my: 4, mx: 2 }}>
+              <FormLabel sx={{ my: 2, mx: 2 }} id="demo-controlled-radio-buttons-group">model</FormLabel>
+              <RadioGroup
+                aria-labelledby="demo-controlled-radio-buttons-group"
+                name="model"
+                value={formik.values.model}
+                onChange={formik.handleChange}
+              >
+                <FormControlLabel value="Linear" control={<Radio />} label="Linear" />
+                <FormControlLabel value="Exponential" control={<Radio />} label="Exponential" />
+              </RadioGroup>
               <TextField
                 type="number"
-                value={formik.values.startPrice}
-                onChange={formik.handleChange}
-                name="startPrice"
-                label="startPrice"
+                disabled
+                value={formik.values.protocolFee}
+                name="protocolFee"
+                label="protocolFee"
+                variant="outlined"
+                sx={{ my: 2, mx: 2, ml: 6 }}
+              />
+              <TextField
+                type="number"
+                value={formik.values.projectFee}
+                disabled
+                name="projectFee"
+                label="projectFee"
                 variant="outlined"
                 sx={{ my: 2, mx: 2 }}
               />
@@ -352,6 +479,18 @@ function CreatePool() {
                 value={formik.values.spotPrice}
                 name="spotPrice"
                 label="spotPrice"
+                variant="outlined"
+                sx={{ my: 2, mx: 2 }}
+              />
+            </Stack>
+
+            <Stack flexDirection="row">
+              <TextField
+                type="number"
+                value={formik.values.startPrice}
+                onChange={formik.handleChange}
+                name="startPrice"
+                label="startPrice"
                 variant="outlined"
                 sx={{ my: 2, mx: 2 }}
               />
@@ -376,58 +515,26 @@ function CreatePool() {
                     sx={{ my: 2, mx: 2 }}
                   />
                 ) : null}
-              <TextField
-                type="number"
-                value={formik.values.protocolFee}
-                onChange={formik.handleChange}
-                name="protocolFee"
-                label="protocolFee"
-                variant="outlined"
-                sx={{ my: 2, mx: 2 }}
-              />
-              <TextField
-                type="number"
-                value={formik.values.projectFee}
-                onChange={formik.handleChange}
-                name="projectFee"
-                label="projectFee"
-                variant="outlined"
-                sx={{ my: 2, mx: 2 }}
-              />
-            </Stack>
-            <Stack flexDirection="row">
-              <TextField
-                type="text"
-                value={formik.values.collectionAddress}
-                onChange={formik.handleChange}
-                name="collectionAddress"
-                label="collectionAddress"
-                variant="outlined"
-                sx={{ my: 2, mx: 2 }}
-              />
-              {formik.values.tokenType === 'ERC20' ? (
-                <>
-                  <TextField
-                    type="text"
-                    value={formik.values.tokenAddress}
-                    onChange={formik.handleChange}
-                    name="tokenAddress"
-                    label="tokenAddress"
-                    variant="outlined"
-                    sx={{ my: 2, mx: 2 }}
-                  />
-                  <TextField
-                    type="text"
-                    value={formik.values.initialTokenBalance}
-                    onChange={formik.handleChange}
-                    name="initialTokenBalance"
-                    label="initialTokenBalance"
-                    variant="outlined"
-                    sx={{ my: 2, mx: 2 }}
-                  />
-                </>
+              {formik.values.poolType !== 'buy' && (formik.values.ttttype === 'ERC721-NativeToken' || formik.values.ttttype === 'ERC721-ERC20') ? (
+                <TextField
+                  type="text"
+                  value={formik.values.nftIds}
+                  onChange={(e) => {
+                    const inputString = e?.target?.value;
+                    const validInput = /^[\d,]*$/.test(inputString);
+                    if (validInput) {
+                      const newTokenIds = inputString.split(',').map((id) => (id.trim()));
+                      formik.setFieldValue('nftIds', newTokenIds);
+                      console.log('xxxxxxxx:', newTokenIds);
+                    }
+                  }}
+                  name="nftIds"
+                  label="nftIds"
+                  variant="outlined"
+                  sx={{ my: 2, mx: 2 }}
+                />
               ) : null}
-              {formik.values.tokenType === 'ERC1155' ? (
+              {formik.values.ttttype === 'ERC1155-NativeToken' || formik.values.ttttype === 'ERC1155-ERC20' ? (
                 <TextField
                   type="text"
                   value={formik.values.tokenId}
@@ -438,17 +545,8 @@ function CreatePool() {
                   sx={{ my: 2, mx: 2 }}
                 />
               ) : null}
-              {formik.values.poolType !== 'buy' && formik.values.tokenType !== 'ERC1155' ? (
-                <TextField
-                  type="text"
-                  value={formik.values.nftIds}
-                  onChange={formik.handleChange}
-                  name="nftIds"
-                  label="nftIds"
-                  variant="outlined"
-                  sx={{ my: 2, mx: 2 }}
-                />
-              ) : null}
+            </Stack>
+            <Stack flexDirection="row">
               {formik.values.poolType !== 'sell' ? (
                 <TextField
                   type="number"
@@ -460,7 +558,8 @@ function CreatePool() {
                   sx={{ my: 2, mx: 2 }}
                 />
               ) : null}
-              {formik.values.poolType !== 'buy' ? (
+
+              {formik.values.poolType === 'trade' ? (
                 <TextField
                   type="number"
                   value={formik.values.sellNftCount}
@@ -471,55 +570,53 @@ function CreatePool() {
                   sx={{ my: 2, mx: 2 }}
                 />
               ) : null}
+
+              {formik.values.poolType !== 'sell' && (formik.values.ttttype === 'ERC721-ERC20' || formik.values.ttttype === 'ERC1155-ERC20') ? (
+                <TextField
+                  type="text"
+                  value={formik.values.initialTokenBalance}
+                  onChange={formik.handleChange}
+                  name="initialTokenBalance"
+                  label="initialTokenBalance"
+                  variant="outlined"
+                  sx={{ my: 2, mx: 2 }}
+                />
+              ) : null}
+
+            </Stack>
+
+            <Divider />
+            {/* // 4 Create Pool */}
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: '2xl' }}>4 Create Pool</Typography>
+            <Stack flexDirection="row" sx={{ my: 4, mx: 2 }}>
+              {formik?.values?.ttttype === 'ERC721-NativeToken' || formik?.values?.ttttype === 'ERC1155-NativeToken' ? (
+                <>
+                  <Typography sx={{ my: 2, mx: 2 }}>
+                    deposit:
+                    {deposit}
+                    ETH
+                  </Typography>
+                  <Typography sx={{ my: 2, mx: 2 }}>
+                    receive:
+                    {receive}
+                    ETH
+                  </Typography>
+                </>
+              ) : null}
+              <Button
+                variant="contained"
+                sx={{ m: 2 }}
+                onClick={() => {
+                  formik.submitForm();
+                }}
+              >
+                Create Pool
+              </Button>
             </Stack>
           </FormControl>
         </Grid>
-        <Grid item xs={6}>
-          <Typography>
-            Price data:
-          </Typography>
-          <ReactJson src={priceJson} theme="monokai" />
-        </Grid>
-        <Grid item xs={6}>
-          {formik?.values?.tokenType !== 'ERC20' ? (
-            <>
-              <Typography sx={{ my: 2, mx: 2 }}>
-                deposit:
-                {deposit}
-                ETH
-              </Typography>
-              <Typography sx={{ my: 2, mx: 2 }}>
-                receive:
-                {receive}
-                ETH
-              </Typography>
-            </>
-          ) : null}
-          <Button
-            variant="contained"
-            sx={{ m: 2 }}
-            onClick={() => {
-              formik.submitForm();
-            }}
-          >
-            Create Pool
-          </Button>
-          {formik?.values?.poolType !== 'buy' ? (
-            <Button
-              variant="contained"
-              sx={{ m: 2 }}
-              onClick={() => {
-                const chainIdHex = ethers.BigNumber.from(chainId).toHexString();
-                setApproval({
-                  nftContractAddress: formik.values.collectionAddress,
-                  chainId: chainIdHex,
-                  createOrSwap: 'create',
-                });
-              }}
-            >
-              approve
-            </Button>
-          ) : null}
+
+        <Grid item xs={12}>
           {
             formik?.values?.poolType !== 'buy'
               ? (
@@ -541,11 +638,15 @@ function CreatePool() {
           <Typography sx={{ my: 2, mx: 2 }}>
             NFT contract :
             {
-              CollectionAddress
-                ?.[ethers.BigNumber.from(chainId).toHexString()]
-                ?.[formik.values.tokenType]
+              formik?.values?.collectionAddress
             }
           </Typography>
+        </Grid>
+        <Grid item xs={12}>
+          <Typography>
+            Price data:
+          </Typography>
+          <ReactJson src={priceJson} theme="monokai" />
         </Grid>
       </Grid>
     </Box>
