@@ -30,12 +30,12 @@ const myJsonObject = {
 const initialValues = {
   startPrice: 1,
   spotPrice: 1,
-  delta: 0.1,
+  delta: 0,
   fee: 0,
-  protocolFee: 0.005,
+  protocolFee: 0.01,
   projectFee: 0,
   buyNftCount: 1,
-  sellNftCount: 1,
+  sellNftCount: 0,
   action: 'create',
   model: 'Linear',
   poolType: 'buy',
@@ -45,7 +45,7 @@ const initialValues = {
   tokenAddress: '0xFBD152E487A8d5c638365357F6bdfa197C150992',
   tokenId: 1,
   initialTokenBalance: 10,
-  nftIds: [5, 6],
+  nftIds: [],
 };
 
 const getPriceData = ({
