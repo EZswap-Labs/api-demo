@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { BASE_URL } from '../config/constant';
 
 export function queryPoolListByPage(parameter) {
-  // aa
+  console.log('BASE_URL', BASE_URL);
   return axios({
-    url: 'https://testapi.ezswap.io/api/queryCollectionPoolList',
+    url: BASE_URL + 'queryCollectionPoolList',
     method: 'post',
     data: parameter,
   });
