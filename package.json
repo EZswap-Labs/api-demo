@@ -2,7 +2,6 @@
   "name": "api-demo",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://EZswap-Labs.github.io/api-demo/",
   "dependencies": {
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
