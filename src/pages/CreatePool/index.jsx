@@ -30,12 +30,12 @@ const myJsonObject = {
 const initialValues = {
   startPrice: 1,
   spotPrice: 1,
-  delta: 0.1,
+  delta: 0,
   fee: 0,
-  protocolFee: 0.005,
+  protocolFee: 0.01,
   projectFee: 0,
   buyNftCount: 1,
-  sellNftCount: 1,
+  sellNftCount: 0,
   action: 'create',
   model: 'Linear',
   poolType: 'buy',
@@ -45,7 +45,7 @@ const initialValues = {
   tokenAddress: '0xFBD152E487A8d5c638365357F6bdfa197C150992',
   tokenId: 1,
   initialTokenBalance: 10,
-  nftIds: [5, 6],
+  nftIds: [],
 };
 
 const getPriceData = ({
@@ -121,6 +121,14 @@ const curveAddressMap = {
     Linear: '0xB32eFC47Bf503B3593a23204cF891295a85115Ea',
     Exponential: '0xE567f07cD4aeC9AEDD8A54E4F2A4d24de204eB98',
   },
+  '0x34816d': {
+    Linear: '0xE567f07cD4aeC9AEDD8A54E4F2A4d24de204eB98',
+    Exponential: '0x75f155c8F3AF789Ea05A1061467476b216F9102b',
+  },
+  '0xa9': {
+    Linear: '0x9Be2Dc731bFf38B0a5D893c7a5ECE8e170c67b86',
+    Exponential: '0x20C318AA7c2eC1190F20D41EB6C6F3Ec9f5955fe',
+  },
 };
 const CollectionAddress = {
   '0x05': {
@@ -157,6 +165,16 @@ const CollectionAddress = {
     ERC20: '0x0eA28A599d162c7776B1c920914B425Ce6E33bC3',
     ERC721: '0xb02074A8f4A59a03C815980560B5D8d1db4c2145',
     ERC1155: '0x6baFf0EcD4390F6F75C6b37a8EFf2550cBdF9846',
+  },
+  '0x34816d': {
+    ERC20: '0x0B20E82DAC9dCc7b9D082C2Abb32AEf2D33a42D6',
+    ERC721: '0xB0CCEC418B8c5606EED44ecCf83E7932893E1105',
+    ERC1155: '0xd48Aa2a392A1c6253D88728e20d20f0203F8838c',
+  },
+  '0xa9': {
+    ERC20: '0xB32eFC47Bf503B3593a23204cF891295a85115Ea',
+    ERC721: '0xE567f07cD4aeC9AEDD8A54E4F2A4d24de204eB98',
+    ERC1155: '0x7e19ae65b9DE48C09eAdFdF0e4Be2CF977eE63b3',
   },
 };
 

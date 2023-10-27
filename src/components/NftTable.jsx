@@ -62,6 +62,16 @@ const columns = [
     headerName: 'protocolFee',
     width: 100,
     valueGetter: (data) => (Number(utils.formatEther(data?.row?.protocolFee))),
+  },{
+    field: 'vol',
+    headerName: 'vol',
+    width: 100,
+    valueGetter: (data) => (Number(utils.formatEther(data?.row?.ethVolume))),
+  },{
+    field: 'balance',
+    headerName: 'balance',
+    width: 100,
+    valueGetter: (data) => (Number(utils.formatEther(data?.row?.ethBalance))),
   },
   // { field: 'gfee', headerName: 'gfee', width: 100 },
 ];

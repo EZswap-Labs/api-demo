@@ -40,8 +40,50 @@ const neoevm = {
   testnet: true,
 };
 
+const mantatest = {
+  id: 3441005,
+  name: 'Manta Testnet L2 Rollup',
+  network: 'Manta Testnet L2 Rollup',
+  iconBackground: '#008000',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'ETH',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    public: { http: ['https://manta-testnet.calderachain.xyz/http'] },
+    default: { http: ['https://manta-testnet.calderachain.xyz/http'] },
+  },
+  blockExplorers: {
+    default: { name: 'pacific', url: 'https://pacific-explorer.manta.network/' },
+    etherscan: { name: 'pacific', url: 'https://pacific-explorer.manta.network/' },
+  },
+  testnet: true,
+};
+
+const mantamain = {
+  id: 169,
+  name: 'Manta Pacific L2 Rollup',
+  network: 'Manta Pacific L2 Rollup',
+  iconBackground: '#008000',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'ETH',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    public: { http: ['https://pacific-rpc.manta.network/http'] },
+    default: { http: ['https://pacific-rpc.manta.network/http'] },
+  },
+  blockExplorers: {
+    default: { name: 'pacific', url: 'https://pacific-explorer.manta.network/' },
+    etherscan: { name: 'pacific', url: 'https://pacific-explorer.manta.network/' },
+  },
+  testnet: false,
+};
+
 const { chains, provider } = configureChains(
-  [goerli, polygon, polygonMumbai, arbitrum, arbitrumGoerli, zkSyncTestnet, neoevm],
+  [goerli, polygon, polygonMumbai, arbitrum, mantamain, arbitrumGoerli, zkSyncTestnet, mantatest],
   [
     alchemyProvider({ apiKey: 'eeb2JnW2JdlOkqPH6NZVhVpRSXKaSW8D' }),
     publicProvider(),

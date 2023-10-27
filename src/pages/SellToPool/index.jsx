@@ -26,6 +26,10 @@ function BuyFromPool() {
       network = 'arbone';
     } else if (chainId === 421613) {
       network = 'arbgoerli';
+    } else if (chainId === 3441005) {
+      network = 'mantatest';
+    } else if (chainId === 169) {
+      network = 'manta';
     } else if (chainId === 2970385) {
       const provider = new ethers.providers.Web3Provider(window?.ethereum);
       const eventSignature = '0xf5bdc103c3e68a20d5f97d2d46792d3fdddfa4efeb6761f8141e6a7b936ca66c';
