@@ -231,7 +231,7 @@ function CreatePool() {
         poolTypeMap?.[values.poolType], // buy: 0, sell: 1, trade: 2,
         utils.parseEther(delta?.toString()),
         utils.parseEther(values?.fee?.toString()), // fee 只有trade池子才有
-        utils.parseEther(values?.spotPrice?.toString()), // 开始价格
+        utils.parseEther((Math.floor(values?.spotPrice * 1000000000000000000) / 1000000000000000000).toString()), // 开始价格
         [], // initialNFTIDs
       ];
 
